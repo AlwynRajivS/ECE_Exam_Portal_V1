@@ -1,0 +1,238 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam Result</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet"
+ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root{
+ --blue:#0d47a1;
+ --green:#2e7d32;
+ --orange:#ef6c00;
+ --red:#c62828;
+ --bg:#eef2f7;
+}
+*{box-sizing:border-box;font-family:'Segoe UI',system-ui}
+body{margin:0;background:var(--bg)}
+
+header{
+ background:linear-gradient(135deg,var(--blue),#1976d2);
+ color:#fff;
+ padding:20px;
+ text-align:center;
+ font-size:22px;
+ font-weight:700;
+ box-shadow:0 8px 22px rgba(0,0,0,.35);
+}
+
+.container{
+ max-width:720px;
+ margin:30px auto;
+ padding:20px;
+}
+
+.card{
+ background:#fff;
+ padding:26px;
+ border-radius:24px;
+ box-shadow:0 14px 36px rgba(0,0,0,.2);
+ text-align:center;
+}
+
+.student{
+ font-size:18px;
+ font-weight:700;
+ color:var(--blue);
+ margin-bottom:6px;
+}
+
+.exam{
+ font-size:14px;
+ color:#555;
+ margin-bottom:18px;
+}
+
+.stats{
+ display:grid;
+ grid-template-columns:repeat(2,1fr);
+ gap:14px;
+ margin:22px 0;
+}
+
+.stat{
+ background:#f5f7fb;
+ padding:14px;
+ border-radius:18px;
+}
+.stat h4{margin:0;font-size:13px;color:#555}
+.stat p{margin:6px 0 0;font-size:20px;font-weight:700}
+
+.green{color:var(--green)}
+.orange{color:var(--orange)}
+.red{color:var(--red)}
+.blue{color:var(--blue)}
+
+.badge{
+ display:inline-block;
+ margin-top:14px;
+ padding:8px 20px;
+ border-radius:20px;
+ color:#fff;
+ font-weight:700;
+ font-size:13px;
+ background:linear-gradient(135deg,#2e7d32,#66bb6a);
+}
+
+canvas{margin-top:20px}
+
+.footer-btn{
+ margin-top:28px;
+}
+.footer-btn button{
+ width:100%;
+ padding:14px;
+ border:none;
+ border-radius:18px;
+ color:#fff;
+ font-size:15px;
+ cursor:pointer;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ gap:10px;
+ background:linear-gradient(135deg,#546e7a,#90a4ae);
+}
+
+@media(max-width:520px){
+ .stats{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<header>📊 Exam Result & Performance</header>
+
+<div class="container">
+<div class="card">
+
+  <div class="student" id="studentInfo"></div>
+  <div class="exam" id="examInfo"></div>
+
+  <div class="stats">
+    <div class="stat">
+      <h4>Total Questions</h4>
+      <p id="totalQ" class="blue">0</p>
+    </div>
+    <div class="stat">
+      <h4>Answered</h4>
+      <p id="answered" class="green">0</p>
+    </div>
+    <div class="stat">
+      <h4>Unanswered</h4>
+      <p id="unanswered" class="orange">0</p>
+    </div>
+    <div class="stat">
+      <h4>Violations</h4>
+      <p id="violations" class="red">0</p>
+    </div>
+  </div>
+
+  <h3 style="color:#0d47a1">
+    Marks Scored: <span id="marks"></span>
+  </h3>
+
+  <span class="badge">SUBMITTED</span>
+
+  <canvas id="chart" height="180"></canvas>
+
+  <div class="footer-btn">
+    <button onclick="goDashboard()">
+      <i class="fa-solid fa-house"></i> Go to Dashboard
+    </button>
+  </div>
+
+</div>
+</div>
+
+<script>
+const WEBAPP_URL =
+"https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
+
+const user = JSON.parse(sessionStorage.getItem("user"));
+const exam_id = sessionStorage.getItem("exam_id");
+
+/* 🔒 FORCE BACK BUTTON TO DASHBOARD */
+history.pushState(null, null, location.href);
+window.onpopstate = () => goDashboard();
+
+studentInfo.innerHTML = `👨‍🎓 ${user.name} (${user.roll})`;
+examInfo.innerHTML = `📝 Exam ID: ${exam_id}`;
+
+Promise.all([
+ fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({action:"getResults", exam_id})
+ }).then(r=>r.json()),
+
+ fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({
+    action:"getResponses",
+    exam_id,
+    roll_no:user.roll
+  })
+ }).then(r=>r.json())
+])
+.then(([results, responses])=>{
+
+ const r = results.find(x=>x[1]===user.roll);
+ if(!r){ alert("Result not found"); return; }
+
+ const marks = r[2];
+ const vio = r[3];
+
+ const responseRow = responses[0];
+ const answers = responseRow ? JSON.parse(responseRow[2]) : {};
+
+ let answered = 0, unanswered = 0;
+ Object.values(answers).forEach(a=>{
+   if(a === "") unanswered++;
+   else answered++;
+ });
+
+ document.getElementById("totalQ").innerText = Object.keys(answers).length;
+ document.getElementById("answered").innerText = answered;
+ document.getElementById("unanswered").innerText = unanswered;
+ document.getElementById("violations").innerText = vio;
+ document.getElementById("marks").innerText = marks;
+
+ new Chart(document.getElementById("chart"),{
+  type:"bar",
+  data:{
+   labels:["Answered","Unanswered","Violations"],
+   datasets:[{
+    data:[answered, unanswered, vio],
+    backgroundColor:["#2e7d32","#ef6c00","#c62828"]
+   }]
+  },
+  options:{
+   responsive:true,
+   plugins:{legend:{display:false}},
+   scales:{y:{beginAtZero:true}}
+  }
+ });
+});
+
+function goDashboard(){
+ location.replace("student_dashboard.html");
+}
+</script>
+
+</body>
+</html>

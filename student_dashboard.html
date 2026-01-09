@@ -1,0 +1,428 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard</title>
+
+<link rel="stylesheet"
+ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root{
+  --blue:#0d47a1;
+  --blue2:#1976d2;
+  --green:#2e7d32;
+  --orange:#ef6c00;
+  --gray:#546e7a;
+  --red:#c62828;
+  --bg:#eef2f7;
+}
+
+*{box-sizing:border-box;font-family:'Segoe UI',system-ui}
+body{margin:0;background:var(--bg)}
+
+header{
+  background:linear-gradient(135deg,var(--blue),var(--blue2));
+  color:#fff;
+  padding:22px 16px;
+  text-align:center;
+  font-size:22px;
+  font-weight:600;
+  position:sticky;top:0;z-index:20;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+}
+
+.container{max-width:1200px;margin:auto;padding:20px}
+
+/* PROFILE */
+.profile{
+  background:rgba(255,255,255,.95);
+  border-radius:26px;
+  padding:24px;
+  display:flex;
+  gap:18px;
+  box-shadow:0 16px 40px rgba(0,0,0,.18);
+  margin-bottom:36px;
+}
+.profile i{
+  font-size:66px;
+  color:var(--blue);
+}
+.profile h3{margin:0;color:var(--blue)}
+.profile p{margin:6px 0;color:#444;font-size:14px}
+
+/* SECTION */
+.section{margin-bottom:40px}
+.section h3{
+  color:var(--blue);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:20px;
+}
+
+/* EXAM CARD */
+.exam-card{
+  background:linear-gradient(180deg,#ffffff,#f9fbff);
+  border-radius:28px;
+  padding:28px;
+  margin-bottom:22px;
+  box-shadow:0 18px 38px rgba(0,0,0,.18);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  flex-direction:column;
+  position:relative;
+  transition:.35s ease;
+}
+.exam-card:hover{
+  transform:translateY(-6px) scale(1.01);
+}
+
+/* RIBBON */
+.ribbon{
+  position:absolute;
+  top:18px;
+  left:-42px;
+  transform:rotate(-45deg);
+  width:160px;
+  text-align:center;
+  font-size:12px;
+  font-weight:700;
+  color:#fff;
+  padding:6px 0;
+}
+.live{background:linear-gradient(135deg,#2e7d32,#66bb6a)}
+.upcoming{background:linear-gradient(135deg,#ef6c00,#ffb74d)}
+.completed{background:linear-gradient(135deg,#546e7a,#90a4ae)}
+
+/* INFO */
+.exam-info h4{
+  margin:0;
+  font-size:21px;
+  font-weight:700;
+  color:var(--blue);
+}
+.exam-info p{
+  margin:8px 0;
+  font-size:14px;
+  color:#555;
+}
+.meta{
+  margin-top:12px;
+  padding:10px 16px;
+  border-radius:14px;
+  background:#e3f2fd;
+  font-size:14px;
+  font-weight:600;
+  color:#1976d2;
+}
+
+/* BUTTONS */
+.btn{
+  padding:14px 30px;
+  border:none;
+  border-radius:20px;
+  font-size:15px;
+  cursor:pointer;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:18px;
+  transition:.25s;
+}
+.start{
+  background:linear-gradient(135deg,#2e7d32,#66bb6a);
+}
+.review{
+  background:linear-gradient(135deg,var(--blue),var(--blue2));
+}
+.btn:hover{opacity:.92}
+
+/* INFO MESSAGE */
+.info{
+  margin-top:16px;
+  background:#fff3e0;
+  padding:14px 18px;
+  border-radius:16px;
+  font-size:14px;
+  color:#e65100;
+  box-shadow:0 6px 16px rgba(0,0,0,.12);
+}
+
+/* EMPTY */
+.empty{
+  background:#fff;
+  padding:26px;
+  border-radius:24px;
+  text-align:center;
+  color:#777;
+  box-shadow:0 10px 22px rgba(0,0,0,.14);
+}
+
+/* LOGOUT */
+.logout{
+  background:linear-gradient(135deg,#c62828,#e53935);
+  width:100%;
+  justify-content:center;
+  margin-top:44px;
+}
+
+/* MOBILE */
+@media(max-width:720px){
+  header{font-size:20px}
+  .exam-card{padding:24px}
+  .btn{width:100%;justify-content:center}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+ <i class="fa-solid fa-user-graduate"></i>
+ Student Examination Portal
+</header>
+
+<div class="container">
+
+<!-- PROFILE -->
+<div class="profile" id="profile"></div>
+
+<!-- LIVE -->
+<div class="section">
+<h3><i class="fa-solid fa-bolt"></i> Live Exams</h3>
+<div id="live" class="empty">No live exams</div>
+</div>
+
+<!-- UPCOMING -->
+<div class="section">
+<h3><i class="fa-solid fa-clock"></i> Scheduled Exams</h3>
+<div id="upcoming" class="empty">No scheduled exams</div>
+</div>
+
+<!-- COMPLETED -->
+<div class="section">
+<h3><i class="fa-solid fa-check-circle"></i> Completed Exams</h3>
+<div id="completed" class="empty">No completed exams</div>
+</div>
+
+<button class="btn logout" onclick="logout()">
+<i class="fa-solid fa-right-from-bracket"></i> Logout
+</button>
+
+</div>
+
+<script>
+const WEBAPP_URL =
+"https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
+
+const user = JSON.parse(sessionStorage.getItem("user"));
+
+profile.innerHTML=`
+<i class="fa-solid fa-circle-user"></i>
+<div>
+<h3>${user.name}</h3>
+<p><b>Roll No:</b> ${user.roll}</p>
+<p><b>Department:</b> ${user.dept}</p>
+<p><b>Year / Section:</b> ${user.year} - ${user.section}</p>
+</div>`;
+
+/* LOAD EXAMS + RESULTS */
+Promise.all([
+ fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({action:"getStudentExams",roll:user.roll})
+ }).then(r=>r.json()),
+
+ fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({action:"getResults"})
+ }).then(r=>r.json())
+]).then(([exams,results])=>{
+
+ live.innerHTML="";
+ upcoming.innerHTML="";
+ completed.innerHTML="";
+
+ exams.forEach(e=>{
+
+  const partA = Number(e[2]);
+  const partB = Number(e[3]);
+  const totalMarks = partA*1 + partB*2;
+
+  /* All attempts of this student */
+  const attempts = results.filter(
+    r => r[0]===e[0] && r[1]===user.roll
+  );
+
+  const attemptCount = attempts.length;
+  const lastStatus = attemptCount
+    ? attempts[attemptCount-1][4]
+    : null;
+
+  const now = new Date();
+  const start = new Date(e[8]);
+  const end   = new Date(e[9]);
+
+  /* ================== DECISION ================== */
+
+  /* 🔒 COMPLETED if already submitted */
+  if(attemptCount > 0 && lastStatus === "SUBMITTED"){
+    completed.innerHTML += completedCard(
+      e,
+      "Already submitted",
+      partA, partB, totalMarks
+    );
+    return;
+  }
+
+  /* 🔁 RE-ENABLED → allow again */
+  /* ================== DECISION (FIXED) ================== */
+
+/* 1️⃣ SUBMITTED → COMPLETED (highest priority) */
+if (lastStatus === "SUBMITTED") {
+  completed.innerHTML += completedCard(
+    e,
+    "Already submitted",
+    partA, partB, totalMarks
+  );
+  return;
+}
+
+/* 2️⃣ RE-ENABLED → LIVE */
+if (lastStatus === "RE-ENABLED") {
+  live.innerHTML += liveCard(e, partA, partB, totalMarks);
+  return;
+}
+
+/* 3️⃣ LIVE WINDOW (only if NEVER attempted) */
+if (attemptCount === 0 && now >= start && now <= end) {
+  live.innerHTML += liveCard(e, partA, partB, totalMarks);
+  return;
+}
+
+/* 4️⃣ UPCOMING */
+if (now < start) {
+  upcoming.innerHTML += upcomingCard(
+    e, start, partA, partB, totalMarks
+  );
+  return;
+}
+
+/* 5️⃣ EXPIRED (never attempted) */
+completed.innerHTML += completedCard(
+  e,
+  "Exam window closed",
+  partA, partB, totalMarks
+);
+
+
+  /* 🟢 LIVE (first attempt) */
+  if(now >= start && now <= end){
+    live.innerHTML += liveCard(e,partA,partB,totalMarks);
+    return;
+  }
+
+  /* 🟠 UPCOMING */
+  if(now < start){
+    upcoming.innerHTML += upcomingCard(
+      e,start,partA,partB,totalMarks
+    );
+    return;
+  }
+
+  /* 🔵 PAST EXAM (never attempted) */
+  completed.innerHTML += completedCard(
+    e,"Exam window closed",partA,partB,totalMarks
+  );
+ });
+
+ if(!live.innerHTML)
+   live.innerHTML='<div class="empty">No live exams</div>';
+
+ if(!upcoming.innerHTML)
+   upcoming.innerHTML='<div class="empty">No scheduled exams</div>';
+
+ if(!completed.innerHTML)
+   completed.innerHTML='<div class="empty">No completed exams</div>';
+});
+
+/* ================= CARD TEMPLATES ================= */
+
+function liveCard(e,a,b,t){
+ return `
+ <div class="exam-card">
+ <div class="ribbon live">LIVE</div>
+ <div class="exam-info">
+ <h4>${e[1]}</h4>
+ <p>Exam ID: ${e[0]}</p>
+ <div class="meta">Part A: ${a} | Part B: ${b} | Total Marks: ${t}</div>
+ </div>
+ <button class="btn start" onclick="startExam('${e[0]}')">
+ <i class="fa-solid fa-play"></i> Start Exam
+ </button>
+ </div>`;
+}
+
+function upcomingCard(e,start,a,b,t){
+ return `
+ <div class="exam-card">
+ <div class="ribbon upcoming">SCHEDULED</div>
+ <div class="exam-info">
+ <h4>${e[1]}</h4>
+ <p>Starts: ${start.toLocaleString()}</p>
+ <div class="meta">Part A: ${a} | Part B: ${b} | Total Marks: ${t}</div>
+ </div>
+ </div>`;
+}
+
+function completedCard(e,msg,a,b,t){
+ return `
+ <div class="exam-card">
+ <div class="ribbon completed">COMPLETED</div>
+ <div class="exam-info">
+ <h4>${e[1]}</h4>
+ <p>${msg}</p>
+ <div class="meta">Part A: ${a} | Part B: ${b} | Total Marks: ${t}</div>
+ </div>
+
+ ${
+  e[7]==="YES" && msg==="Already submitted"
+  ? `
+   <button class="btn review" onclick="viewResult('${e[0]}')">
+   <i class="fa-solid fa-chart-bar"></i> View Result</button>
+
+   <button class="btn review" onclick="reviewExam('${e[0]}')">
+   <i class="fa-solid fa-file-lines"></i> Review Answers</button>
+   `
+  : `<div class="info">${msg}</div>`
+ }
+ </div>`;
+}
+
+/* NAVIGATION */
+function startExam(id){
+ sessionStorage.setItem("exam_id",id);
+ location.href="instructions.html";
+}
+function viewResult(id){
+ sessionStorage.setItem("exam_id",id);
+ location.href="result.html";
+}
+function reviewExam(id){
+ sessionStorage.setItem("exam_id",id);
+ location.href="review.html";
+}
+function logout(){
+ sessionStorage.clear();
+ location.href="index.html";
+}
+</script>
+
+
+</body>
+</html>

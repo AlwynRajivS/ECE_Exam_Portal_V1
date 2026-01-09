@@ -1,0 +1,327 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+
+<style>
+:root{
+  --primary:#1565c0;
+  --secondary:#1e88e5;
+  --success:#43a047;
+  --danger:#e53935;
+  --dark:#0d47a1;
+}
+*{box-sizing:border-box;font-family:'Segoe UI',Arial}
+
+body{
+  margin:0;
+  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+}
+
+header{
+  background:var(--dark);
+  color:#fff;
+  padding:18px;
+  text-align:center;
+  font-size:22px;
+  letter-spacing:1px;
+}
+
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:18px;
+}
+
+.card{
+  background:#fff;
+  border-radius:18px;
+  padding:22px;
+  margin-bottom:24px;
+  box-shadow:0 15px 35px rgba(0,0,0,.3);
+}
+
+.card h3{
+  margin-top:0;
+  color:var(--dark);
+  border-bottom:2px solid #e3f2fd;
+  padding-bottom:6px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;
+}
+
+input,select{
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  width:100%;
+}
+
+.btn{
+  padding:12px 16px;
+  border:none;
+  border-radius:12px;
+  font-size:14px;
+  cursor:pointer;
+  color:#fff;
+  margin-top:10px;
+}
+.primary{background:var(--primary)}
+.success{background:var(--success)}
+.danger{background:var(--danger)}
+.secondary{background:#546e7a}
+.btn:hover{opacity:.9}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:14px;
+}
+th,td{
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:center;
+  font-size:14px;
+}
+th{
+  background:var(--primary);
+  color:#fff;
+}
+
+@media(max-width:720px){
+  th,td{font-size:12px}
+}
+</style>
+</head>
+
+<body>
+
+<header>ADMIN – ONLINE ASSESSMENT PLATFORM</header>
+
+<div class="container">
+
+<!-- ================= CREATE / EDIT EXAM ================= -->
+<div class="card">
+<h3>Create / Edit Exam</h3>
+<div class="grid">
+<input id="exam_id" placeholder="Exam ID">
+<input id="exam_name" placeholder="Exam Name">
+<input id="partA_count" placeholder="Part A (1 Mark)">
+<input id="partB_count" placeholder="Part B (2 Mark)">
+<input id="duration_min" placeholder="Duration (minutes)">
+<input id="violation_limit" placeholder="Violation Limit">
+
+<select id="calculator">
+  <option value="YES">Calculator Enabled</option>
+  <option value="NO">Calculator Disabled</option>
+</select>
+
+<select id="review">
+  <option value="YES">Review Enabled</option>
+  <option value="NO">Review Disabled</option>
+</select>
+
+<input id="start_datetime" type="datetime-local">
+<input id="end_datetime" type="datetime-local">
+
+<select id="exam_status">
+  <option value="ENABLED">Enabled</option>
+  <option value="DISABLED">Disabled</option>
+</select>
+</div>
+
+<button class="btn primary" onclick="createExam()">Create Exam</button>
+<button class="btn secondary" onclick="updateExam()">Update Exam</button>
+</div>
+
+<!-- ================= EXAM LIST ================= -->
+<div class="card">
+<h3>Created Exams</h3>
+<table>
+<thead>
+<tr>
+  <th>Exam ID</th>
+  <th>Name</th>
+  <th>Status</th>
+  <th>Start</th>
+  <th>End</th>
+  <th>Edit</th>
+</tr>
+</thead>
+<tbody id="examTable"></tbody>
+</table>
+</div>
+
+<!-- ================= QUESTIONS ================= -->
+<div class="card">
+<h3>Add Question (Single)</h3>
+<div class="grid">
+<input id="q_exam_id" placeholder="Exam ID">
+<select id="q_part">
+  <option value="PART A">PART A</option>
+  <option value="PART B">PART B</option>
+</select>
+<input id="q_qid" placeholder="Question ID">
+<input id="q_question" placeholder="Question">
+<input id="q_A" placeholder="Option A">
+<input id="q_B" placeholder="Option B">
+<input id="q_C" placeholder="Option C">
+<input id="q_D" placeholder="Option D">
+<input id="q_correct" placeholder="Correct (A/B/C/D)">
+<input id="q_image" placeholder="Image URL (optional)">
+</div>
+<button class="btn success" onclick="addSingleQuestion()">Add Question</button>
+</div>
+
+<!-- ================= BULK UPLOAD ================= -->
+<div class="card">
+<h3>Bulk Upload</h3>
+<input type="file" id="questionFile" accept=".csv">
+<button class="btn primary" onclick="uploadQuestions()">Upload Questions</button>
+<button class="btn secondary" onclick="downloadQuestionTemplate()">Question Template</button>
+
+<hr>
+
+<input type="file" id="studentFile" accept=".csv">
+<button class="btn primary" onclick="uploadStudents()">Upload Students</button>
+<button class="btn secondary" onclick="downloadStudentTemplate()">Student Template</button>
+</div>
+
+<!-- ================= EXAM MAPPING ================= -->
+<div class="card">
+<h3>Exam – Student Mapping</h3>
+<input type="file" id="mapFile" accept=".csv">
+<button class="btn primary" onclick="uploadMapping()">Upload Mapping</button>
+<button class="btn secondary" onclick="downloadMapTemplate()">Mapping Template</button>
+</div>
+
+<!-- ================= RESULTS MANAGEMENT ================= -->
+<div class="card">
+<h3>Student Results (Re-Enable Control)</h3>
+<table>
+<thead>
+<tr>
+  <th>Exam ID</th>
+  <th>Roll No</th>
+  <th>Marks</th>
+  <th>Violations</th>
+  <th>Status</th>
+  <th>Action</th>
+</tr>
+</thead>
+<tbody id="resultTable"></tbody>
+</table>
+</div>
+
+<button class="btn danger" onclick="logout()">Logout</button>
+
+</div>
+
+<script>
+const WEBAPP_URL =
+"https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
+
+/* ================= LOAD EXAMS ================= */
+function loadExams(){
+ fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({action:"getAllExams"})
+ }).then(r=>r.json()).then(d=>{
+  examTable.innerHTML="";
+  d.forEach(ex=>{
+   examTable.innerHTML+=`
+    <tr>
+      <td>${ex[0]}</td>
+      <td>${ex[1]}</td>
+      <td>${ex[10]}</td>
+      <td>${ex[8]}</td>
+      <td>${ex[9]}</td>
+      <td>
+        <button class="btn primary"
+         onclick='editExam(${JSON.stringify(ex)})'>Edit</button>
+      </td>
+    </tr>`;
+  });
+ });
+}
+
+/* ================= LOAD RESULTS ================= */
+function loadResults(){
+ fetch(
+  WEBAPP_URL + "?action=getResults",   // 👈 IMPORTANT
+  { method:"POST" }
+ )
+ .then(r=>r.json())
+ .then(d=>{
+  resultTable.innerHTML="";
+
+  if(!d || d.length===0){
+    resultTable.innerHTML =
+      "<tr><td colspan='6'>No Results Found</td></tr>";
+    return;
+  }
+
+  d.forEach(r=>{
+    const exam   = r[0];
+    const roll   = r[1];
+    const marks  = r[2];
+    const vio    = r[3];
+    const status = r[4];
+
+    resultTable.innerHTML += `
+      <tr>
+        <td>${exam}</td>
+        <td>${roll}</td>
+        <td>${marks}</td>
+        <td>${vio}</td>
+        <td><b>${status}</b></td>
+        <td>
+          ${
+            status==="SUBMITTED"
+            ? `<button class="btn success"
+                 onclick="reenable('${exam}','${roll}')">
+                 Re-Enable</button>`
+            : "-"
+          }
+        </td>
+      </tr>`;
+  });
+ })
+ .catch(err=>{
+   console.error(err);
+   alert("Error loading results");
+ });
+}
+
+/* ================= RE-ENABLE ================= */
+function reenable(exam_id, roll_no){
+ if(!confirm("Re-enable this student?")) return;
+ fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({
+    action:"unblockStudent",
+    exam_id,
+    roll_no
+  })
+ }).then(()=>{ alert("Student Re-Enabled"); loadResults(); });
+}
+
+/* ================= LOGOUT ================= */
+function logout(){
+ sessionStorage.clear();
+ location.href="index.html";
+}
+
+/* INIT */
+loadExams();
+loadResults();
+</script>
+
+</body>
+</html>

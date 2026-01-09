@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam Instructions</title>
+
+<style>
+body{
+  margin:0;
+  font-family:'Segoe UI',sans-serif;
+  background:linear-gradient(135deg,#e3f2fd,#f5f5f5);
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  border-radius:18px;
+  padding:25px;
+  box-shadow:0 12px 30px rgba(0,0,0,.2);
+}
+
+h2{
+  color:#0d47a1;
+  margin-top:0;
+}
+
+ul{
+  line-height:1.8;
+  color:#333;
+}
+
+.warning{
+  background:#fff3e0;
+  border-left:6px solid #ef6c00;
+  padding:15px;
+  border-radius:10px;
+  margin:15px 0;
+}
+
+.btn{
+  background:linear-gradient(135deg,#0d47a1,#1976d2);
+  color:#fff;
+  padding:14px 24px;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
+  cursor:pointer;
+  width:100%;
+}
+
+.btn:hover{opacity:.9}
+
+.footer{
+  text-align:center;
+  color:#666;
+  font-size:13px;
+  margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<div class="card">
+
+<h2>📜 Examination Instructions</h2>
+
+<ul>
+  <li>The examination is <b>time bound</b>.</li>
+  <li>The exam must be taken in <b>full-screen mode</b>.</li>
+  <li><b>Tab switching, copy, notifications, screen exit</b> will be recorded as violations.</li>
+  <li>Maximum allowed violations are limited. Exceeding the limit leads to <b>auto submission</b>.</li>
+  <li>Questions appear <b>one at a time</b>.</li>
+  <li>You may <b>mark questions for review</b>.</li>
+  <li>Answers are saved automatically.</li>
+</ul>
+
+<div class="warning">
+⚠️ <b>Important:</b>  
+Once the exam starts, it cannot be paused. Ensure stable internet connectivity.
+</div>
+
+<button class="btn" onclick="proceedExam()">Proceed to Exam</button>
+
+<div class="footer">
+Online Examination System
+</div>
+
+</div>
+</div>
+
+<script>
+function proceedExam(){
+ if(confirm("The exam will start in full screen mode. Continue?")){
+   document.documentElement.requestFullscreen();
+   location.href="exam.html";
+ }
+}
+</script>
+
+</body>
+</html>

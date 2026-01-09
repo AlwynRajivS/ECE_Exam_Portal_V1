@@ -1,0 +1,394 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online Examination</title>
+
+<link rel="stylesheet"
+ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root{
+ --blue:#0d47a1; --green:#2e7d32;
+ --orange:#fb8c00; --red:#c62828;
+ --gray:#78909c; --bg:#eef2f7;
+}
+*{box-sizing:border-box;font-family:'Segoe UI',system-ui}
+body{margin:0;background:var(--bg)}
+
+header{
+ position:sticky;top:0;z-index:50;
+ background:linear-gradient(135deg,#0d47a1,#1976d2);
+ color:#fff;padding:14px 18px;
+ display:flex;justify-content:space-between;
+ align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.35)
+}
+header .grp{display:flex;gap:14px;align-items:center}
+
+/* PROGRESS BAR */
+.progress{
+ height:6px;background:#bbdefb;width:100%;
+}
+.progress span{
+ display:block;height:100%;
+ background:#2e7d32;width:0%;
+ transition:.3s;
+}
+
+/* LAYOUT */
+.main{display:flex;min-height:90vh}
+.qbox{flex:1;background:#fff;padding:28px}
+.palette{
+ width:260px;background:#f7f9fc;
+ padding:18px;border-left:1px solid #ddd
+}
+
+/* QUESTION */
+.section{
+ background:#e3f2fd;color:#0d47a1;
+ padding:6px 14px;border-radius:16px;
+ font-weight:600;display:inline-block
+}
+.qimg{
+ max-width:100%;margin:14px auto;
+ border-radius:14px;
+ box-shadow:0 6px 18px rgba(0,0,0,.25)
+}
+.option{
+ background:#e3f2fd;padding:14px 16px;
+ border-radius:14px;margin:12px 0;
+ cursor:pointer;transition:.2s;
+ display:flex;gap:10px;align-items:center
+}
+.option:hover{background:#bbdefb}
+.option.selected{
+ background:linear-gradient(135deg,#2e7d32,#66bb6a);
+ color:#fff
+}
+
+/* CONTROLS */
+.controls{margin-top:26px}
+.btn{
+ padding:12px 20px;border:none;
+ border-radius:14px;color:#fff;
+ cursor:pointer;font-size:14px;
+ display:inline-flex;align-items:center;gap:8px
+}
+.next{background:#1976d2}
+.mark{background:#fb8c00}
+.submit{background:#c62828}
+.submit:disabled{background:#b0bec5}
+
+/* PALETTE */
+.palette span{
+ width:36px;height:36px;
+ display:inline-block;margin:6px;
+ border-radius:50%;text-align:center;
+ line-height:36px;color:#fff;
+ background:#b0bec5;font-weight:600;
+ cursor:pointer
+}
+.answered{background:#2e7d32!important}
+.review{background:#fb8c00!important}
+
+/* LEGEND */
+.legend span{
+ display:inline-block;margin-right:10px;
+ font-size:13px
+}
+.legend i{margin-right:4px}
+
+/* MODAL */
+.modal{
+ position:fixed;inset:0;
+ background:rgba(0,0,0,.6);
+ display:none;align-items:center;
+ justify-content:center;z-index:100
+}
+.modal-box{
+ background:#fff;border-radius:18px;
+ padding:24px;max-width:360px;
+ width:90%;text-align:center
+}
+
+/* CALCULATOR */
+.calculator{
+ position:fixed;right:20px;bottom:20px;
+ width:300px;background:#263238;
+ color:#fff;border-radius:18px;
+ padding:16px;display:none;
+ box-shadow:0 18px 40px rgba(0,0,0,.5);
+ z-index:200
+}
+.calc-screen{
+ width:100%;height:44px;
+ background:#000;color:#0f0;
+ font-size:18px;border:none;
+ margin-bottom:10px;
+ padding:6px;text-align:right
+}
+.calc-btn{
+ width:22%;margin:1%;
+ padding:10px;background:#37474f;
+ color:#fff;border:none;
+ border-radius:10px;cursor:pointer
+}
+
+/* MOBILE */
+@media(max-width:900px){
+ .main{flex-direction:column}
+ .palette{width:100%;border-left:none;border-top:1px solid #ddd}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+ <div class="grp">
+  <i class="fa-solid fa-user-graduate"></i>
+  <span id="studentInfo"></span>
+ </div>
+ <div class="grp">
+  ⏱ <span id="timer">00:00</span>
+  ⚠ <span id="vio">0</span>
+  <button id="calcBtn" class="btn" style="display:none;background:#455a64"
+   onclick="toggleCalc()">
+   <i class="fa-solid fa-calculator"></i>
+  </button>
+ </div>
+</header>
+
+<div class="progress"><span id="bar"></span></div>
+
+<div class="main">
+ <div class="qbox">
+  <div id="question"></div>
+
+  <div class="controls">
+   <button class="btn mark" onclick="markReview()">
+    <i class="fa-solid fa-bookmark"></i> Review
+   </button>
+   <button class="btn next" onclick="nextQ()">
+    <i class="fa-solid fa-arrow-right"></i> Next
+   </button>
+   <button id="submitBtn" class="btn submit"
+    onclick="confirmSubmit()" disabled>
+    <i class="fa-solid fa-paper-plane"></i> Submit
+   </button>
+  </div>
+
+  <div class="legend" style="margin-top:20px">
+   <span><i class="fa-solid fa-circle" style="color:#b0bec5"></i> Unanswered</span>
+   <span><i class="fa-solid fa-circle" style="color:#2e7d32"></i> Answered</span>
+   <span><i class="fa-solid fa-circle" style="color:#fb8c00"></i> Review</span>
+  </div>
+ </div>
+
+ <div class="palette" id="palette"></div>
+</div>
+
+<!-- SUBMIT MODAL -->
+<div class="modal" id="modal">
+ <div class="modal-box">
+  <h3>Submit Exam?</h3>
+  <p>You cannot reattempt unless admin unlocks.</p>
+  <button class="btn submit" onclick="submitExam()">Yes, Submit</button>
+  <button class="btn next" onclick="closeModal()">Cancel</button>
+ </div>
+</div>
+
+<!-- CALCULATOR -->
+<div class="calculator" id="calculator">
+ <input class="calc-screen" id="calcScreen" readonly>
+ <div>
+  <button class="calc-btn" onclick="calc('7')">7</button>
+  <button class="calc-btn" onclick="calc('8')">8</button>
+  <button class="calc-btn" onclick="calc('9')">9</button>
+  <button class="calc-btn" onclick="calc('/')">÷</button>
+  <button class="calc-btn" onclick="calc('4')">4</button>
+  <button class="calc-btn" onclick="calc('5')">5</button>
+  <button class="calc-btn" onclick="calc('6')">6</button>
+  <button class="calc-btn" onclick="calc('*')">×</button>
+  <button class="calc-btn" onclick="calc('1')">1</button>
+  <button class="calc-btn" onclick="calc('2')">2</button>
+  <button class="calc-btn" onclick="calc('3')">3</button>
+  <button class="calc-btn" onclick="calc('-')">−</button>
+  <button class="calc-btn" onclick="calc('0')">0</button>
+  <button class="calc-btn" onclick="calc('.')">.</button>
+  <button class="calc-btn" onclick="calculate()">=</button>
+  <button class="calc-btn" onclick="calc('+')">+</button>
+ </div>
+</div>
+
+<script>
+const WEBAPP_URL="https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
+
+const user=JSON.parse(sessionStorage.getItem("user"));
+const exam_id=sessionStorage.getItem("exam_id");
+studentInfo.innerText=`${user.name} (${user.roll})`;
+
+let questions=[],index=0,answers={},violations=0;
+let duration=0,limit=0,partA=0,partB=0;
+
+/* FORCE FULLSCREEN */
+setTimeout(()=>document.documentElement.requestFullscreen?.(),500);
+
+/* EXAM META */
+fetch(WEBAPP_URL,{method:"POST",
+ body:new URLSearchParams({action:"getExamMeta",exam_id})
+}).then(r=>r.json()).then(m=>{
+ duration=m.duration*60;
+ limit=m.violation_limit;
+ partA=m.partA; partB=m.partB;
+ if(m.calculator==="YES") calcBtn.style.display="inline-flex";
+});
+
+/* QUESTIONS */
+fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({ action:"getQuestions", exam_id })
+})
+.then(r=>r.json())
+.then(allQ => {
+
+  /* 🔀 RANDOM SHUFFLE FUNCTION */
+  function shuffle(arr){
+    return arr.sort(() => Math.random() - 0.5);
+  }
+
+  /* FILTER BY PART */
+  const partA_Q = shuffle(
+    allQ.filter(q => q[1].toUpperCase().trim() === "PART A")
+  ).slice(0, partA);
+
+  const partB_Q = shuffle(
+    allQ.filter(q => q[1].toUpperCase().trim() === "PART B")
+  ).slice(0, partB);
+
+  /* FINAL ASSIGNED QUESTIONS */
+  questions = [
+    ...partA_Q.map(q => ({ ...q, sec: "PART A" })),
+    ...partB_Q.map(q => ({ ...q, sec: "PART B" }))
+  ];
+
+  drawPalette();
+  loadQ();
+  startTimer();
+});
+
+
+/* UI */
+function loadQ(){
+ const q=questions[index];
+ question.innerHTML=`
+ <span class="section">${q.sec}</span>
+ <h3>Q${index+1}. ${q[3]}</h3>
+ ${q[9]?`<img src="${q[9]}" class="qimg">`:""}
+ ${["A","B","C","D"].map((o,i)=>`
+ <div class="option ${answers[q[2]]===o?'selected':''}"
+ onclick="selectAns('${o}')">
+ <i class="fa-regular fa-circle-dot"></i> ${q[4+i]}
+ </div>`).join("")}`;
+ submitBtn.disabled=index!==questions.length-1;
+ bar.style.width=((index+1)/questions.length*100)+"%";
+}
+
+function selectAns(a){
+ answers[questions[index][2]]=a;
+ document.getElementById("p"+index).classList.add("answered");
+ loadQ();
+}
+
+function drawPalette(){
+ palette.innerHTML="";
+ questions.forEach((_,i)=>{
+  palette.innerHTML+=`<span id="p${i}"
+   onclick="index=${i};loadQ()">${i+1}</span>`;
+ });
+}
+
+function markReview(){
+ document.getElementById("p"+index).classList.add("review");
+}
+
+function nextQ(){ if(index<questions.length-1){index++;loadQ();} }
+
+/* TIMER */
+function startTimer(){
+ setInterval(()=>{
+  const m=Math.floor(duration/60),s=duration%60;
+  timer.innerText=`${m}:${String(s).padStart(2,"0")}`;
+  duration--; if(duration<0) submitExam();
+ },1000);
+}
+
+/* VIOLATIONS */
+["visibilitychange","copy","cut"].forEach(e=>
+ document.addEventListener(e,()=>violate(e)));
+document.addEventListener("fullscreenchange",()=>{
+ if(!document.fullscreenElement) violate("Exit Fullscreen");
+});
+function violate(t){
+ violations++; vio.innerText=violations;
+ fetch(WEBAPP_URL,{method:"POST",
+  body:new URLSearchParams({
+   action:"violation",exam_id,
+   roll_no:user.roll,type:t
+  })});
+ if(violations>=limit) submitExam();
+}
+
+/* SUBMIT */
+function confirmSubmit(){ modal.style.display="flex"; }
+function closeModal(){ modal.style.display="none"; }
+
+function submitExam(){
+
+  /* ✅ BUILD FINAL ANSWER OBJECT
+     ONLY FOR ASSIGNED QUESTIONS */
+  const finalAnswers = {};
+
+  questions.forEach(q=>{
+    const qid = q[2];   // Assigned Question ID
+    finalAnswers[qid] = answers[qid] || ""; // Answer or empty
+  });
+
+  fetch(WEBAPP_URL,{
+    method:"POST",
+    body:new URLSearchParams({
+      action:"submitExam",
+      exam_id,
+      roll_no:user.roll,
+      answers_json: JSON.stringify(finalAnswers),
+      total_marks: Object.values(finalAnswers)
+        .filter(a => a !== "").length,
+      total_violations: violations,
+      status: "SUBMITTED"
+    })
+  })
+  .then(r=>r.json())
+  .then(res=>{
+    if(res.error){
+      alert(res.error);
+      return;
+    }
+    alert("✅ Exam Submitted Successfully");
+    location.href="summary.html";
+  });
+}
+
+
+/* CALCULATOR */
+function toggleCalc(){
+ calculator.style.display=
+ calculator.style.display==="none"?"block":"none";
+}
+function calc(v){calcScreen.value+=v;}
+function calculate(){try{calcScreen.value=eval(calcScreen.value);}
+catch{calcScreen.value="Error";}}
+</script>
+
+</body>
+</html>

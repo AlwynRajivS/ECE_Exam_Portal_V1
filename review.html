@@ -1,0 +1,163 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Answer Review</title>
+
+<style>
+body{
+  font-family:'Segoe UI',system-ui;
+  background:#eef2f7;
+  margin:0;
+}
+header{
+  background:#0d47a1;
+  color:#fff;
+  padding:18px;
+  text-align:center;
+  font-size:20px;
+  font-weight:600;
+}
+.sub-header{
+  background:#e3f2fd;
+  padding:14px;
+  text-align:center;
+  font-size:14px;
+  font-weight:600;
+  color:#0d47a1;
+}
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+.card{
+  background:#fff;
+  margin-bottom:18px;
+  padding:20px;
+  border-radius:18px;
+  box-shadow:0 10px 25px rgba(0,0,0,.15);
+}
+.question{
+  font-weight:600;
+  margin-bottom:12px;
+}
+.answer{
+  margin:6px 0;
+  font-size:14px;
+}
+.correct{color:#2e7d32;font-weight:600}
+.wrong{color:#c62828;font-weight:600}
+.badge{
+  display:inline-block;
+  padding:4px 12px;
+  border-radius:14px;
+  font-size:12px;
+  color:#fff;
+  margin-top:10px;
+}
+.badge.correct{background:#2e7d32}
+.badge.wrong{background:#c62828}
+img{
+  max-width:100%;
+  border-radius:10px;
+  margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>📄 Answer Review</header>
+<div class="sub-header" id="studentInfo"></div>
+<div class="container" id="review"></div>
+
+<script>
+const WEBAPP_URL =
+"https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
+
+const exam_id = sessionStorage.getItem("exam_id");
+const user = JSON.parse(sessionStorage.getItem("user"));
+
+studentInfo.innerHTML = `
+👨‍🎓 ${user.name} | 🆔 ${user.roll} | 📝 Exam ID: ${exam_id}
+`;
+
+Promise.all([
+  fetch(WEBAPP_URL,{
+    method:"POST",
+    body:new URLSearchParams({ action:"getQuestions", exam_id })
+  }).then(r=>r.json()),
+
+  fetch(WEBAPP_URL,{
+    method:"POST",
+    body:new URLSearchParams({
+      action:"getResponses",
+      exam_id,
+      roll_no:user.roll
+    })
+  }).then(r=>r.json())
+])
+.then(([questions, responses])=>{
+
+  if(!responses.length){
+    review.innerHTML = `<p>No responses found.</p>`;
+    return;
+  }
+
+  const answers = JSON.parse(responses[0][2]); // answers_json
+
+  questions.forEach((q, index)=>{
+
+    const qid = q[2];
+    const studentKey = answers[qid] || "";   // A / B / C / D or ""
+    const correctKey = q[8];
+
+    // 🔑 OPTION TEXT MAP
+    const optionMap = {
+      A: q[4],
+      B: q[5],
+      C: q[6],
+      D: q[7]
+    };
+
+    const studentText = studentKey
+      ? optionMap[studentKey]
+      : "Not Answered";
+
+    const correctText = optionMap[correctKey];
+    const isCorrect = studentKey && studentKey === correctKey;
+
+    review.innerHTML += `
+    <div class="card">
+      <div class="question">
+        Q${index+1}. ${q[3]}
+      </div>
+
+      ${q[9] ? `<img src="${q[9]}">` : ""}
+
+      <div class="answer">
+        Your Answer:
+        <span class="${isCorrect?'correct':'wrong'}">
+          ${studentText}
+        </span>
+      </div>
+
+      <div class="answer">
+        Correct Answer:
+        <span class="correct">
+          ${correctText}
+        </span>
+      </div>
+
+      <span class="badge ${isCorrect?'correct':'wrong'}">
+        ${studentKey ? (isCorrect ? "Correct" : "Wrong") : "Not Answered"}
+      </span>
+    </div>`;
+  });
+});
+</script>
+
+</body>
+</html>

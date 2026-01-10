@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -64,24 +64,25 @@ input,select{
 }
 
 .btn{
-  padding:12px 16px;
+  padding:13px;
   border:none;
   border-radius:12px;
-  font-size:14px;
+  font-size:15px;
   cursor:pointer;
   color:#fff;
-  margin-top:10px;
+  margin-top:12px;
 }
 .primary{background:var(--primary)}
 .success{background:var(--success)}
 .danger{background:var(--danger)}
 .secondary{background:#546e7a}
+
 .btn:hover{opacity:.9}
 
 table{
   width:100%;
   border-collapse:collapse;
-  margin-top:14px;
+  margin-top:12px;
 }
 th,td{
   border:1px solid #ccc;
@@ -94,8 +95,8 @@ th{
   color:#fff;
 }
 
-@media(max-width:720px){
-  th,td{font-size:12px}
+@media(max-width:600px){
+  header{font-size:18px}
 }
 </style>
 </head>
@@ -137,7 +138,7 @@ th{
 </div>
 
 <button class="btn primary" onclick="createExam()">Create Exam</button>
-<button class="btn secondary" onclick="updateExam()">Update Exam</button>
+<button class="btn secondary" onclick="updateExam()">Update Exam Status</button>
 </div>
 
 <!-- ================= EXAM LIST ================= -->
@@ -190,20 +191,27 @@ th{
 
 <input type="file" id="studentFile" accept=".csv">
 <button class="btn primary" onclick="uploadStudents()">Upload Students</button>
-<button class="btn secondary" onclick="downloadStudentTemplate()">Student Template</button>
+<button class="btn secondary" onclick="downloadStudentTemplate()">
+  Student Template
+</button>
 </div>
 
 <!-- ================= EXAM MAPPING ================= -->
 <div class="card">
-<h3>Exam – Student Mapping</h3>
+<h3>Bulk Exam – Student Mapping</h3>
 <input type="file" id="mapFile" accept=".csv">
 <button class="btn primary" onclick="uploadMapping()">Upload Mapping</button>
 <button class="btn secondary" onclick="downloadMapTemplate()">Mapping Template</button>
 </div>
-
 <!-- ================= RESULTS MANAGEMENT ================= -->
 <div class="card">
 <h3>Student Results (Re-Enable Control)</h3>
+
+<div class="grid">
+  <input id="result_exam_id" placeholder="Enter Exam ID to View Results">
+  <button class="btn primary" onclick="loadResults()">Load Results</button>
+</div>
+
 <table>
 <thead>
 <tr>
@@ -219,18 +227,83 @@ th{
 </table>
 </div>
 
+
+<!-- ================= LOGOUT ================= -->
 <button class="btn danger" onclick="logout()">Logout</button>
 
 </div>
 
 <script>
-const WEBAPP_URL =
-"https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyv4rYwt1P_579hiz9px5jIphcAye7H1r83aDtmK-8VOwH9LuVSniU8TbRIZKWgxs5e/exec";
+
+/* ================= CREATE EXAM ================= */
+function createExam(){
+ if(!exam_id.value){ alert("Exam ID required"); return; }
+
+ fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({action:"getAllExams"})
+ })
+ .then(r=>r.json())
+ .then(exams=>{
+  const exists = exams.some(e => e[0] === exam_id.value);
+
+  if(exists){
+    alert("Exam ID already exists. Use UPDATE.");
+    return;
+  }
+
+  fetch(WEBAPP_URL,{
+    method:"POST",
+    body:new URLSearchParams({
+      action:"createExam",
+      exam_id:exam_id.value,
+      exam_name:exam_name.value,
+      partA_count:partA_count.value,
+      partB_count:partB_count.value,
+      duration_min:duration_min.value,
+      violation_limit:violation_limit.value,
+      calculator:calculator.value,
+      review:review.value,
+      start_datetime:start_datetime.value,
+      end_datetime:end_datetime.value
+    })
+  }).then(()=>{ alert("Exam Created"); loadExams(); });
+ });
+}
+
+
+/* ================= UPDATE STATUS ================= */
+function updateExam(){
+ fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({
+   action:"updateExamDetails",
+   exam_id:exam_id.value,
+   exam_name:exam_name.value,
+   partA_count:partA_count.value,
+   partB_count:partB_count.value,
+   duration_min:duration_min.value,
+   violation_limit:violation_limit.value,
+   calculator:calculator.value,
+   review:review.value,
+   start_datetime:start_datetime.value,
+   end_datetime:end_datetime.value,
+   status:exam_status.value
+  })
+ }).then(()=>{ alert("Exam Updated Successfully"); loadExams(); });
+}
+
+function downloadStudentTemplate(){
+ downloadCSV(
+  "email,password,roll_no,name,dept,year,section",
+  "student_upload_template.csv"
+ );
+}
 
 /* ================= LOAD EXAMS ================= */
 function loadExams(){
- fetch(WEBAPP_URL,{
-  method:"POST",
+ fetch(WEBAPP_URL,{method:"POST",
   body:new URLSearchParams({action:"getAllExams"})
  }).then(r=>r.json()).then(d=>{
   examTable.innerHTML="";
@@ -242,19 +315,118 @@ function loadExams(){
       <td>${ex[10]}</td>
       <td>${ex[8]}</td>
       <td>${ex[9]}</td>
-      <td>
-        <button class="btn primary"
-         onclick='editExam(${JSON.stringify(ex)})'>Edit</button>
-      </td>
+      <td><button class="btn primary" onclick='editExam(${JSON.stringify(ex)})'>Edit</button></td>
     </tr>`;
   });
  });
 }
 
+function editExam(ex){
+ exam_id.value=ex[0];
+ exam_name.value=ex[1];
+ partA_count.value=ex[2];
+ partB_count.value=ex[3];
+ duration_min.value=ex[4];
+ violation_limit.value=ex[5];
+ calculator.value=ex[6];
+ review.value=ex[7];
+ start_datetime.value=ex[8];
+ end_datetime.value=ex[9];
+ exam_status.value=ex[10];
+}
+
+/* ================= QUESTIONS ================= */
+function addSingleQuestion(){
+ const q=[{
+  exam_id:q_exam_id.value,part:q_part.value,qid:q_qid.value,
+  question:q_question.value,optA:q_A.value,optB:q_B.value,
+  optC:q_C.value,optD:q_D.value,correct:q_correct.value,image_url:q_image.value
+ }];
+ sendBulkQuestions(q);
+}
+
+function uploadQuestions(){
+ parseCSV(questionFile.files[0],sendBulkQuestions);
+}
+
+function sendBulkQuestions(data){
+ fetch(WEBAPP_URL,{method:"POST",
+  body:new URLSearchParams({action:"bulkQuestions",json:JSON.stringify(data)})
+ }).then(()=>alert("Questions Stored"));
+}
+
+/* ================= STUDENTS ================= */
+function uploadStudents(){
+ parseCSV(studentFile.files[0],data=>{
+  fetch(WEBAPP_URL,{method:"POST",
+   body:new URLSearchParams({action:"bulkStudents",json:JSON.stringify(data)})
+  }).then(()=>alert("Students Added"));
+ });
+}
+
+/* ================= MAPPING ================= */
+function uploadMapping(){
+ parseCSV(mapFile.files[0],data=>{
+  data.forEach(m=>{
+   fetch(WEBAPP_URL,{method:"POST",
+    body:new URLSearchParams({
+     action:"mapExam",
+     exam_id:m.exam_id,
+     roll_no:m.roll_no||"",
+     dept:m.dept||"",
+     year:m.year||"",
+     section:m.section||""
+    })
+   });
+  });
+  alert("Mapping Completed");
+ });
+}
+
+/* ================= CSV ================= */
+function parseCSV(file,cb){
+ if(!file){alert("Select CSV");return;}
+ const r=new FileReader();
+ r.onload=e=>{
+  const rows=e.target.result.trim().split("\n");
+  const h=rows.shift().split(",");
+  const d=rows.map(r=>{
+   const o={};
+   r.split(",").forEach((v,i)=>o[h[i]]=v.trim());
+   return o;
+  });
+  cb(d);
+ };
+ r.readAsText(file);
+}
+
+/* ================= TEMPLATES ================= */
+function downloadQuestionTemplate(){
+ downloadCSV("exam_id,part,qid,question,optA,optB,optC,optD,correct,image_url","question_template.csv");
+}
+function downloadMapTemplate(){
+ downloadCSV("exam_id,roll_no,dept,year,section","exam_student_mapping_template.csv");
+}
+function downloadCSV(csv,name){
+ const a=document.createElement("a");
+ a.href="data:text/csv;charset=utf-8,"+csv;
+ a.download=name;
+ a.click();
+}
+
 /* ================= LOAD RESULTS ================= */
+
 function loadResults(){
+
+ const exam_id = result_exam_id.value.trim();
+
+ if(!exam_id){
+   alert("Please enter Exam ID");
+   return;
+ }
+
  fetch(
-  WEBAPP_URL + "?action=getResults",   // 👈 IMPORTANT
+  WEBAPP_URL + "?action=getResults&exam_id=" + encodeURIComponent(exam_id),
   { method:"POST" }
  )
  .then(r=>r.json())
@@ -299,6 +471,8 @@ function loadResults(){
  });
 }
 
+
+
 /* ================= RE-ENABLE ================= */
 function reenable(exam_id, roll_no){
  if(!confirm("Re-enable this student?")) return;
@@ -318,10 +492,9 @@ function logout(){
  location.href="index.html";
 }
 
-/* INIT */
 loadExams();
-loadResults();
 </script>
 
 </body>
 </html>
+

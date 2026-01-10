@@ -171,6 +171,24 @@ header{
   margin-top:44px;
 }
 
+.section-title{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-title i{
+  font-size: 14px;
+  color: #f9a825;
+}
+
+@media (max-width: 600px){
+  .section-title .title-text{
+    display: none;
+  }
+}
+
+
 /* MOBILE */
 @media(max-width:720px){
   header{font-size:20px}
@@ -194,20 +212,39 @@ header{
 
 <!-- LIVE -->
 <div class="section">
-<h3><i class="fa-solid fa-bolt fa-sm"></i> Live Exams</h3>
-<div id="live" class="empty">No live exams</div>
+  <h3 class="section-title">
+    <i class="fa-solid fa-bolt"></i>
+    <span class="title-text">Live Exams</span>
+  </h3>
+
+  <div id="live" class="empty">No live exams</div>
 </div>
+
+
 
 <!-- UPCOMING -->
+
 <div class="section">
-<h3><i class="fa-solid fa-clock fa-sm"></i> Scheduled Exams</h3>
-<div id="upcoming" class="empty">No scheduled exams</div>
+  <h3 class="section-title">
+    <i class="fa-solid fa-bolt"></i>
+    <span class="title-text">Scheduled Exams</span>
+  </h3>
+
+  <div id="upcoming" class="empty">No schedule exams</div>
 </div>
 
+
 <!-- COMPLETED -->
+
+
+
 <div class="section">
-<h3><i class="fa-solid fa-check-circle fa-sm"></i> Completed Exams</h3>
-<div id="completed" class="empty">No completed exams</div>
+  <h3 class="section-title">
+    <i class="fa-solid fa-bolt"></i>
+    <span class="title-text">Completed Exams</span>
+  </h3>
+
+  <div id="completed" class="empty">No completed exams</div>
 </div>
 
 <button class="btn logout" onclick="logout()">

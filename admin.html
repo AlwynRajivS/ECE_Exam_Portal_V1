@@ -94,6 +94,28 @@ th{
   background:var(--primary);
   color:#fff;
 }
+/* ===== Scrollable Table (Mobile Friendly) ===== */
+.table-scroll{
+  width:100%;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  margin-top:12px;
+}
+
+/* Ensure table doesn’t shrink */
+.table-scroll table{
+  min-width:700px;
+}
+
+/* Mobile optimization */
+@media(max-width:768px){
+  th, td{
+    white-space:nowrap;
+    font-size:13px;
+    padding:10px;
+  }
+}
+
 
 @media(max-width:600px){
   header{font-size:18px}
@@ -144,6 +166,7 @@ th{
 <!-- ================= EXAM LIST ================= -->
 <div class="card">
 <h3>Created Exams</h3>
+<div class="table-scroll">
 <table>
 <thead>
 <tr>
@@ -157,6 +180,7 @@ th{
 </thead>
 <tbody id="examTable"></tbody>
 </table>
+</div>
 </div>
 
 <!-- ================= QUESTIONS ================= -->
@@ -212,20 +236,22 @@ th{
   <button class="btn primary" onclick="loadResults()">Load Results</button>
 </div>
 
-<table>
-<thead>
-<tr>
-  <th>Exam ID</th>
-  <th>Roll No</th>
-  <th>Marks</th>
-  <th>Violations</th>
-  <th>Status</th>
-  <th>Action</th>
-</tr>
-</thead>
-<tbody id="resultTable"></tbody>
-</table>
+<div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Exam ID</th>
+        <th>Roll No</th>
+        <th>Marks</th>
+        <th>Violations</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="resultTable"></tbody>
+  </table>
 </div>
+
 
 
 <!-- ================= LOGOUT ================= -->

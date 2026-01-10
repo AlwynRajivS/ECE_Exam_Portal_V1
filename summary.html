@@ -143,9 +143,8 @@ canvas{margin-top:20px}
     </div>
   </div>
 
-  <h3 style="color:#0d47a1">
-    Marks Scored: <span id="marks"></span>
-  </h3>
+  
+    
 
   <span class="badge">SUBMITTED</span>
 
@@ -193,8 +192,7 @@ Promise.all([
 
  const r = results.find(x=>x[1]===user.roll);
  if(!r){ alert("Result not found"); return; }
-
- const marks = r[2];
+
  const vio = r[3];
 
  const responseRow = responses[0];

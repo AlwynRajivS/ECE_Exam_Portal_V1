@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -26,17 +26,9 @@ header{
 }
 header .grp{display:flex;gap:14px;align-items:center}
 
-/* PROGRESS BAR */
-.progress{
- height:6px;background:#bbdefb;width:100%;
-}
-.progress span{
- display:block;height:100%;
- background:#2e7d32;width:0%;
- transition:.3s;
-}
+.progress{height:6px;background:#bbdefb}
+.progress span{display:block;height:100%;background:#2e7d32;width:0%;transition:.3s}
 
-/* LAYOUT */
 .main{display:flex;min-height:90vh}
 .qbox{flex:1;background:#fff;padding:28px}
 .palette{
@@ -44,7 +36,6 @@ header .grp{display:flex;gap:14px;align-items:center}
  padding:18px;border-left:1px solid #ddd
 }
 
-/* QUESTION */
 .section{
  background:#e3f2fd;color:#0d47a1;
  padding:6px 14px;border-radius:16px;
@@ -67,7 +58,6 @@ header .grp{display:flex;gap:14px;align-items:center}
  color:#fff
 }
 
-/* CONTROLS */
 .controls{margin-top:26px}
 .btn{
  padding:12px 20px;border:none;
@@ -80,7 +70,6 @@ header .grp{display:flex;gap:14px;align-items:center}
 .submit{background:#c62828}
 .submit:disabled{background:#b0bec5}
 
-/* PALETTE */
 .palette span{
  width:36px;height:36px;
  display:inline-block;margin:6px;
@@ -92,14 +81,9 @@ header .grp{display:flex;gap:14px;align-items:center}
 .answered{background:#2e7d32!important}
 .review{background:#fb8c00!important}
 
-/* LEGEND */
-.legend span{
- display:inline-block;margin-right:10px;
- font-size:13px
-}
+.legend span{margin-right:10px;font-size:13px}
 .legend i{margin-right:4px}
 
-/* MODAL */
 .modal{
  position:fixed;inset:0;
  background:rgba(0,0,0,.6);
@@ -112,7 +96,6 @@ header .grp{display:flex;gap:14px;align-items:center}
  width:90%;text-align:center
 }
 
-/* CALCULATOR */
 .calculator{
  position:fixed;right:20px;bottom:20px;
  width:300px;background:#263238;
@@ -135,7 +118,18 @@ header .grp{display:flex;gap:14px;align-items:center}
  border-radius:10px;cursor:pointer
 }
 
-/* MOBILE */
+/* 🔒 PROCTOR OVERLAY */
+#proctorOverlay{
+ position:fixed;inset:0;
+ background:rgba(0,0,0,.85);
+ color:#fff;display:none;
+ z-index:1000;
+ align-items:center;justify-content:center;
+ text-align:center;
+}
+
+#proctorOverlay.active{display:flex}
+
 @media(max-width:900px){
  .main{flex-direction:column}
  .palette{width:100%;border-left:none;border-top:1px solid #ddd}
@@ -152,8 +146,9 @@ header .grp{display:flex;gap:14px;align-items:center}
  </div>
  <div class="grp">
   ⏱ <span id="timer">00:00</span>
-  ⚠ <span id="vio">0</span>
-  <button id="calcBtn" class="btn" style="display:none;background:#455a64"
+  ⚠ <span id="vio">0 / 0</span>
+  <button id="calcBtn" class="btn"
+   style="display:none;background:#455a64"
    onclick="toggleCalc()">
    <i class="fa-solid fa-calculator"></i>
   </button>
@@ -189,51 +184,68 @@ header .grp{display:flex;gap:14px;align-items:center}
  <div class="palette" id="palette"></div>
 </div>
 
-<!-- SUBMIT MODAL -->
 <div class="modal" id="modal">
  <div class="modal-box">
   <h3>Submit Exam?</h3>
-  <p>You cannot reattempt unless admin unlocks.</p>
-  <button class="btn submit" onclick="submitExam()">Yes, Submit</button>
+  <button class="btn submit" onclick="submitExam()">Yes</button>
   <button class="btn next" onclick="closeModal()">Cancel</button>
  </div>
 </div>
 
-<!-- CALCULATOR -->
-<div class="calculator" id="calculator">
- <input class="calc-screen" id="calcScreen" readonly>
+<div id="proctorOverlay">
  <div>
-  <button class="calc-btn" onclick="calc('7')">7</button>
-  <button class="calc-btn" onclick="calc('8')">8</button>
-  <button class="calc-btn" onclick="calc('9')">9</button>
-  <button class="calc-btn" onclick="calc('/')">÷</button>
-  <button class="calc-btn" onclick="calc('4')">4</button>
-  <button class="calc-btn" onclick="calc('5')">5</button>
-  <button class="calc-btn" onclick="calc('6')">6</button>
-  <button class="calc-btn" onclick="calc('*')">×</button>
-  <button class="calc-btn" onclick="calc('1')">1</button>
-  <button class="calc-btn" onclick="calc('2')">2</button>
-  <button class="calc-btn" onclick="calc('3')">3</button>
-  <button class="calc-btn" onclick="calc('-')">−</button>
-  <button class="calc-btn" onclick="calc('0')">0</button>
-  <button class="calc-btn" onclick="calc('.')">.</button>
-  <button class="calc-btn" onclick="calculate()">=</button>
-  <button class="calc-btn" onclick="calc('+')">+</button>
+  <h2>⚠ Exam Security Alert</h2>
+  <p id="proctorMsg"></p>
  </div>
 </div>
 
 <script>
-const WEBAPP_URL="https://script.google.com/macros/s/AKfycbzvT_XSek1QFH1DFSNmvivgvr353bTaVLxg4UUsMfOQjWilkZM_2piXajq-cW9I6jMr/exec";
+const WEBAPP_URL="PASTE_YOUR_APPS_SCRIPT_URL";
 
 const user=JSON.parse(sessionStorage.getItem("user"));
 const exam_id=sessionStorage.getItem("exam_id");
 studentInfo.innerText=`${user.name} (${user.roll})`;
 
 let questions=[],index=0,answers={},violations=0;
-let duration=0,limit=0,partA=0,partB=0;
+let violationLog=[],duration=0,limit=0,partA=0,partB=0;
 
-/* FORCE FULLSCREEN */
-setTimeout(()=>document.documentElement.requestFullscreen?.(),500);
+const overlay=document.getElementById("proctorOverlay");
+const proctorMsg=document.getElementById("proctorMsg");
+
+/* FULLSCREEN */
+function forceFullscreen(){
+ if(!document.fullscreenElement){
+  document.documentElement.requestFullscreen().catch(()=>{});
+ }
+}
+document.addEventListener("DOMContentLoaded",forceFullscreen);
+document.addEventListener("click",forceFullscreen);
+
+/* VIOLATIONS */
+function violate(type,auto=false){
+ violations++;
+ vio.innerText=`${violations} / ${limit}`;
+ violationLog.push({type,time:new Date().toLocaleString()});
+ proctorMsg.innerText="Violation: "+type;
+ overlay.classList.add("active");
+ setTimeout(()=>overlay.classList.remove("active"),2000);
+ fetch(WEBAPP_URL,{method:"POST",
+  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
+ });
+ if(auto || violations>=limit) submitExam();
+}
+
+document.addEventListener("fullscreenchange",()=>{
+ if(!document.fullscreenElement) violate("Exit Fullscreen",true);
+});
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden) violate("Tab Switch");
+});
+["copy","cut","contextmenu"].forEach(e=>{
+ document.addEventListener(e,x=>{x.preventDefault();violate(e)});
+});
+window.addEventListener("beforeunload",()=>violate("Page Leave",true));
+window.addEventListener("pageshow",e=>{if(e.persisted)submitExam();});
 
 /* EXAM META */
 fetch(WEBAPP_URL,{method:"POST",
@@ -241,79 +253,46 @@ fetch(WEBAPP_URL,{method:"POST",
 }).then(r=>r.json()).then(m=>{
  duration=m.duration*60;
  limit=m.violation_limit;
- partA=m.partA; partB=m.partB;
+ vio.innerText=`0 / ${limit}`;
+ partA=m.partA;partB=m.partB;
  if(m.calculator==="YES") calcBtn.style.display="inline-flex";
 });
 
 /* QUESTIONS */
-fetch(WEBAPP_URL,{
-  method:"POST",
-  body:new URLSearchParams({ action:"getQuestions", exam_id })
-})
-.then(r=>r.json())
-.then(allQ => {
-
-  /* 🔀 RANDOM SHUFFLE FUNCTION */
-  function shuffle(arr){
-    return arr.sort(() => Math.random() - 0.5);
-  }
-
-  /* FILTER BY PART */
-  const partA_Q = shuffle(
-    allQ.filter(q => q[1].toUpperCase().trim() === "PART A")
-  ).slice(0, partA);
-
-  const partB_Q = shuffle(
-    allQ.filter(q => q[1].toUpperCase().trim() === "PART B")
-  ).slice(0, partB);
-
-  /* FINAL ASSIGNED QUESTIONS */
-  questions = [
-    ...partA_Q.map(q => ({ ...q, sec: "PART A" })),
-    ...partB_Q.map(q => ({ ...q, sec: "PART B" }))
-  ];
-
-  drawPalette();
-  loadQ();
-  startTimer();
+fetch(WEBAPP_URL,{method:"POST",
+ body:new URLSearchParams({action:"getQuestions",exam_id})
+}).then(r=>r.json()).then(allQ=>{
+ const shuffle=a=>a.sort(()=>Math.random()-0.5);
+ const A=shuffle(allQ.filter(q=>q[1]=="PART A")).slice(0,partA);
+ const B=shuffle(allQ.filter(q=>q[1]=="PART B")).slice(0,partB);
+ questions=[...A,...B];
+ drawPalette();loadQ();startTimer();
 });
 
-
-/* UI */
 function loadQ(){
  const q=questions[index];
  question.innerHTML=`
- <span class="section">${q.sec}</span>
+ <span class="section">${q[1]}</span>
  <h3>Q${index+1}. ${q[3]}</h3>
- ${q[9]?`<img src="${q[9]}" class="qimg">`:""}
  ${["A","B","C","D"].map((o,i)=>`
  <div class="option ${answers[q[2]]===o?'selected':''}"
- onclick="selectAns('${o}')">
- <i class="fa-regular fa-circle-dot"></i> ${q[4+i]}
- </div>`).join("")}`;
+ onclick="selectAns('${o}')">${q[4+i]}</div>`).join("")}`;
  submitBtn.disabled=index!==questions.length-1;
  bar.style.width=((index+1)/questions.length*100)+"%";
 }
-
 function selectAns(a){
  answers[questions[index][2]]=a;
  document.getElementById("p"+index).classList.add("answered");
  loadQ();
 }
-
 function drawPalette(){
  palette.innerHTML="";
  questions.forEach((_,i)=>{
-  palette.innerHTML+=`<span id="p${i}"
-   onclick="index=${i};loadQ()">${i+1}</span>`;
+  palette.innerHTML+=`<span id="p${i}" onclick="index=${i};loadQ()">${i+1}</span>`;
  });
 }
-
-function markReview(){
- document.getElementById("p"+index).classList.add("review");
-}
-
-function nextQ(){ if(index<questions.length-1){index++;loadQ();} }
+function markReview(){document.getElementById("p"+index).classList.add("review")}
+function nextQ(){if(index<questions.length-1){index++;loadQ()}}
 
 /* TIMER */
 function startTimer(){
@@ -324,72 +303,29 @@ function startTimer(){
  },1000);
 }
 
-/* VIOLATIONS */
-["visibilitychange","copy","cut"].forEach(e=>
- document.addEventListener(e,()=>violate(e)));
-document.addEventListener("fullscreenchange",()=>{
- if(!document.fullscreenElement) violate("Exit Fullscreen");
-});
-function violate(t){
- violations++; vio.innerText=violations;
+/* SUBMIT */
+function confirmSubmit(){modal.style.display="flex"}
+function closeModal(){modal.style.display="none"}
+function submitExam(){
+ const finalAnswers={};
+ questions.forEach(q=>finalAnswers[q[2]]=answers[q[2]]||"");
  fetch(WEBAPP_URL,{method:"POST",
   body:new URLSearchParams({
-   action:"violation",exam_id,
-   roll_no:user.roll,type:t
-  })});
- if(violations>=limit) submitExam();
-}
-
-/* SUBMIT */
-function confirmSubmit(){ modal.style.display="flex"; }
-function closeModal(){ modal.style.display="none"; }
-
-function submitExam(){
-
-  /* ✅ BUILD FINAL ANSWER OBJECT
-     ONLY FOR ASSIGNED QUESTIONS */
-  const finalAnswers = {};
-
-  questions.forEach(q=>{
-    const qid = q[2];   // Assigned Question ID
-    finalAnswers[qid] = answers[qid] || ""; // Answer or empty
-  });
-
-  fetch(WEBAPP_URL,{
-    method:"POST",
-    body:new URLSearchParams({
-      action:"submitExam",
-      exam_id,
-      roll_no:user.roll,
-      answers_json: JSON.stringify(finalAnswers),
-      total_marks: Object.values(finalAnswers)
-        .filter(a => a !== "").length,
-      total_violations: violations,
-      status: "SUBMITTED"
-    })
+   action:"submitExam",
+   exam_id,
+   roll_no:user.roll,
+   answers_json:JSON.stringify(finalAnswers),
+   violation_log:JSON.stringify(violationLog),
+   total_violations:violations,
+   status:"SUBMITTED"
   })
-  .then(r=>r.json())
-  .then(res=>{
-    if(res.error){
-      alert(res.error);
-      return;
-    }
-    alert("✅ Exam Submitted Successfully");
-    location.href="summary.html";
-  });
+ }).then(()=>location.href="summary.html");
 }
-
 
 /* CALCULATOR */
 function toggleCalc(){
- calculator.style.display=
- calculator.style.display==="none"?"block":"none";
+ calculator.style.display=calculator.style.display=="block"?"none":"block";
 }
-function calc(v){calcScreen.value+=v;}
-function calculate(){try{calcScreen.value=eval(calcScreen.value);}
-catch{calcScreen.value="Error";}}
 </script>
-
 </body>
 </html>
-

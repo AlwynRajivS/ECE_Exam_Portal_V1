@@ -175,16 +175,25 @@ header{
   display: flex;
   align-items: center;
   gap: 6px;
+font-size: 18px;
 }
 
 .section-title i{
   font-size: 14px;
+line-height: 1;
   color: #f9a825;
 }
 
+.title-text{
+  white-space: nowrap;  /* prevent wrapping */
+}
 @media (max-width: 600px){
-  .section-title .title-text{
-    display: none;
+  .section-title{
+    font-size: 16px;
+  }
+
+  .section-title i{
+    font-size: 13px;
   }
 }
 
@@ -240,6 +249,7 @@ header{
 
 <div class="section">
   <h3 class="section-title">
+<i class="fa-solid fa-bolt"></i>
     <span class="title-text">Completed Exams</span>
   </h3>
 

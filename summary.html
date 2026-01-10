@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -143,8 +143,7 @@ canvas{margin-top:20px}
     </div>
   </div>
 
-  
-    
+ 
 
   <span class="badge">SUBMITTED</span>
 
@@ -192,7 +191,8 @@ Promise.all([
 
  const r = results.find(x=>x[1]===user.roll);
  if(!r){ alert("Result not found"); return; }
-
+
+ const marks = r[2];
  const vio = r[3];
 
  const responseRow = responses[0];

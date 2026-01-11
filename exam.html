@@ -224,14 +224,12 @@ studentInfo.innerText=`${user.name} (${user.roll})`;
 let questions=[],index=0,answers={},violations=0;
 let violationLog=[],duration=0,limit=0,partA=0,partB=0;
 
-/* 🔐 PROCTOR STATE */
-let lastViolationTime = 0;
-const VIOLATION_COOLDOWN = 800; // ms (avoid double count)
-
 const overlay=document.getElementById("proctorOverlay");
 const proctorMsg=document.getElementById("proctorMsg");
 
-/* ================= FULLSCREEN ================= */
+
+
+/* FULLSCREEN */
 function forceFullscreen(){
  if(!document.fullscreenElement){
   document.documentElement.requestFullscreen().catch(()=>{});
@@ -240,195 +238,268 @@ function forceFullscreen(){
 document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
-/* ================= VIOLATION CORE ================= */
-function violate(type){
- const now = Date.now();
- if(now - lastViolationTime < VIOLATION_COOLDOWN) return;
- lastViolationTime = now;
-
+/* VIOLATIONS */
+function violate(type,auto=false){
  violations++;
  vio.innerText=`${violations} / ${limit}`;
  violationLog.push({type,time:new Date().toLocaleString()});
-
  proctorMsg.innerText =
-  `Violation Detected: ${type}`;
-
+  `Violation: ${type} | Remaining: ${limit - violations}`;
  overlay.classList.add("active");
  setTimeout(()=>overlay.classList.remove("active"),2000);
-
- fetch(WEBAPP_URL,{
-  method:"POST",
-  body:new URLSearchParams({
-   action:"violation",
-   exam_id,
-   roll_no:user.roll,
-   type
-  })
+ fetch(WEBAPP_URL,{method:"POST",
+  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
  });
-
  if (violations >= limit && questions.length > 0) {
-  submitExam();
- }
+ submitExam();
+}
+
 }
 
 /* ================= STRICT PROCTOR EVENTS ================= */
 
-/* ❌ Fullscreen exit */
+/* ❌ Exit fullscreen */
 document.addEventListener("fullscreenchange",()=>{
  if(!document.fullscreenElement){
   violate("Exit Fullscreen");
  }
 });
 
-/* ❌ ANY background / system interruption */
+/* ❌ Notification / call / lock / background */
 document.addEventListener("visibilitychange",()=>{
  if(document.hidden){
-  violate("App Background / Notification / Screen Lock");
+  violate("App Hidden / Notification / Call / Screen Lock");
  }
 });
 
-/* ❌ Control center swipe / quick app switch */
+/* ❌ Control center / quick app switch */
 window.addEventListener("blur",()=>{
- violate("App Switch / Control Center");
+ violate("App Switch / Control Center Swipe");
 });
 
 /* ❌ Copy / cut / right click */
 ["copy","cut","contextmenu"].forEach(e=>{
- document.addEventListener(e,x=>{
-  x.preventDefault();
+ document.addEventListener(e,ev=>{
+  ev.preventDefault();
   violate(e.toUpperCase());
  });
 });
 
-/* ❌ Page refresh / reload */
+/* ❌ Reload / refresh */
 window.addEventListener("beforeunload",()=>{
  sessionStorage.setItem("resume","YES");
  violate("Page Reload / Refresh");
 });
 
-/* ================= EXAM META ================= */
-fetch(WEBAPP_URL,{
- method:"POST",
+
+/* EXAM META */
+fetch(WEBAPP_URL,{method:"POST",
  body:new URLSearchParams({action:"getExamMeta",exam_id})
-})
-.then(r=>r.json())
-.then(m=>{
+}).then(r=>r.json()).then(m=>{
  duration=m.duration*60;
  limit=m.violation_limit;
  vio.innerText=`0 / ${limit}`;
- partA=m.partA;
- partB=m.partB;
+ partA=m.partA;partB=m.partB;
  if(m.calculator==="YES") calcBtn.style.display="inline-flex";
 });
 
-/* ================= QUESTIONS (FAST FETCH) ================= */
+/* QUESTIONS */
 fetch(WEBAPP_URL,{
  method:"POST",
- body:new URLSearchParams({action:"getQuestions",exam_id})
+ body:new URLSearchParams({action:"getExamQuestions",exam_id})
 })
 .then(r=>r.json())
 .then(allQ=>{
 
- const shuffle=a=>[...a].sort(()=>Math.random()-0.5);
+  function shuffle(arr){
+    return [...arr].sort(() => Math.random() - 0.5);
+  }
 
- const A = shuffle(allQ.filter(q=>q[1]==="PART A")).slice(0,partA);
- const B = shuffle(allQ.filter(q=>q[1]==="PART B")).slice(0,partB);
+  const partAQuestions = allQ.filter(q => q[1] === "PART A");
+  const partBQuestions = allQ.filter(q => q[1] === "PART B");
 
- questions = [...A,...B];
+  const A = shuffle(partAQuestions).slice(0, Number(partA));
+  const B = shuffle(partBQuestions).slice(0, Number(partB));
 
- if(!sessionStorage.getItem("qSignature")){
-  sessionStorage.setItem("qSignature",questions.map(q=>q[2]).join(","));
- }
+  // ✅ 1️⃣ FINAL question list (FIRST TIME)
+  questions = A.concat(B);
 
- document.getElementById("loading").style.display="none";
- drawPalette();
- restoreState();
- loadQ();
- startTimer();
+  // ✅ 2️⃣ CREATE SIGNATURE HERE (THIS IS THE ANSWER)
+  const currentSig = questions.map(q => q[2]).join(",");
+
+  // store ONLY if not already stored (first attempt)
+  if(!sessionStorage.getItem("qSignature")){
+    sessionStorage.setItem("qSignature", currentSig);
+  }
+
+  document.getElementById("loading").style.display = "none";
+
+  console.log("Expected:", Number(partA) + Number(partB));
+  console.log("Loaded:", questions.length);
+
+  drawPalette();
+
+  // ✅ 3️⃣ NOW restore state safely
+  restoreState();
+
+  loadQ();
+  startTimer();
 });
 
-/* ================= UI LOGIC ================= */
-function loadQ(){
- if(index<0||index>=questions.length) index=0;
- const q=questions[index];
 
- question.innerHTML=`
-  <span class="section">${q[1]}</span>
-  <h3>Q${index+1}. ${escapeHTML(q[3])}</h3>
-  ${q[9]?`<img class="qimg" src="${q[9]}">`:""}
-  ${["A","B","C","D"].map((o,i)=>`
-   <div class="option ${answers[index]?.ans===o?'selected':''}"
-    onclick="selectAns('${o}')">${q[4+i]}</div>`).join("")}
- `;
- submitBtn.disabled=index!==questions.length-1;
- bar.style.width=((index+1)/questions.length*100)+"%";
+
+function loadQ(){
+  if(index < 0 || index >= questions.length){
+    index = 0;
+  }
+
+  const q = questions[index];
+
+  question.innerHTML = `
+    <span class="section">${q[1]}</span>
+    <h3>Q${index+1}. ${escapeHTML(q[3])}</h3>
+
+    ${q[9] ? `<img class="qimg" src="${q[9]}">` : ""}
+
+    ${["A","B","C","D"].map((o,i)=>`
+      <div class="option ${answers[index]?.ans === o ? 'selected' : ''}"
+        onclick="selectAns('${o}')">
+        ${q[4+i]}
+      </div>
+    `).join("")}
+  `;
+
+  submitBtn.disabled = index !== questions.length - 1;
+  bar.style.width = ((index + 1) / questions.length * 100) + "%";
 }
+
 
 function selectAns(a){
- answers[index]={qid:questions[index][2],ans:a};
- document.getElementById("p"+index)?.classList.add("answered");
- saveState(); loadQ();
+  answers[index] = {
+    qid: questions[index][2],
+    ans: a
+  };
+
+  const p = document.getElementById("p"+index);
+  if(p){
+    p.classList.add("answered");
+    p.classList.remove("review");
+  }
+
+  saveState();
+  loadQ();   // 🔥 force redraw (important)
 }
+
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 
 function drawPalette(){
- palette.innerHTML="";
- questions.forEach((_,i)=>{
-  palette.innerHTML+=`<span id="p${i}" onclick="index=${i};loadQ()">${i+1}</span>`;
- });
+  palette.innerHTML = "";
+  questions.forEach((_, i)=>{
+    palette.innerHTML += `
+      <span id="p${i}" onclick="index=${i};loadQ()">
+        ${i+1}
+      </span>`;
+  });
 }
 
+function markReview(){document.getElementById("p"+index).classList.add("review")}
+function nextQ(){if(index<questions.length-1){index++;saveState();loadQ()}}
+
+/* TIMER */
+let timerRef=null;
+
 function startTimer(){
- setInterval(()=>{
-  timer.innerText=
-   Math.floor(duration/60)+":"+String(duration%60).padStart(2,"0");
+ if(timerRef) clearInterval(timerRef);
+ timerRef=setInterval(()=>{
+  const m=Math.floor(duration/60),
+        s=duration%60;
+  timer.innerText=`${m}:${String(s).padStart(2,"0")}`;
   duration--;
   saveState();
   if(duration<0) submitExam();
  },1000);
 }
 
-/* ================= SUBMIT ================= */
-function submitExam(){
- const final={};
- questions.forEach((q,i)=>final[q[2]]=answers[i]?.ans||"");
 
- fetch(WEBAPP_URL,{
-  method:"POST",
+/* SUBMIT */
+function confirmSubmit(){modal.style.display="flex"}
+function closeModal(){modal.style.display="none"}
+
+function submitExam(){
+ const finalAnswers={};
+questions.forEach((q, i) => {
+  finalAnswers[String(q[2]).trim()] =
+    answers[i]?.ans || "";
+});
+
+
+ fetch(WEBAPP_URL,{method:"POST",
   body:new URLSearchParams({
    action:"submitExam",
    exam_id,
    roll_no:user.roll,
-   answers_json:JSON.stringify(final),
+   answers_json:JSON.stringify(finalAnswers),
    violation_log:JSON.stringify(violationLog),
-   total_violations:violations
+   total_violations:violations,
+   //status:"SUBMITTED"
   })
  }).then(()=>location.href="summary.html");
 }
 
 function saveState(){
- sessionStorage.setItem("answers",JSON.stringify(answers));
- sessionStorage.setItem("index",index);
- sessionStorage.setItem("timeLeft",duration);
- sessionStorage.setItem("violations",violations);
+ sessionStorage.setItem("answers", JSON.stringify(answers));
+ sessionStorage.setItem("index", index);
+ sessionStorage.setItem("timeLeft", duration);
+ sessionStorage.setItem("violations", violations);
+ 
 }
 
 function restoreState(){
+ const savedSig = sessionStorage.getItem("qSignature");
+ const currentSig = questions.map(q=>q[2]).join(",");
+
+ if(savedSig !== currentSig){
+ sessionStorage.removeItem("answers");
+ sessionStorage.removeItem("index");
+ sessionStorage.removeItem("timeLeft");
+ sessionStorage.removeItem("violations");
+ answers = {};
+ index = 0;
+ return;
+}
+
  if(sessionStorage.getItem("answers")){
-  answers=JSON.parse(sessionStorage.getItem("answers"));
-  index=+sessionStorage.getItem("index")||0;
-  duration=+sessionStorage.getItem("timeLeft")||duration;
-  violations=+sessionStorage.getItem("violations")||0;
-  vio.innerText=`${violations} / ${limit}`;
+   answers = JSON.parse(sessionStorage.getItem("answers"));
+   index = Number(sessionStorage.getItem("index") || 0);
+   duration = Number(sessionStorage.getItem("timeLeft") || duration);
+   violations = Number(sessionStorage.getItem("violations") || 0);
+   vio.innerText=`${violations} / ${limit}`;
  }
 }
 
-function escapeHTML(s){
- return String(s).replace(/[&<>"']/g,m=>({
-  "&":"&amp;","<":"&lt;",">":"&gt;",
-  '"':"&quot;","'":"&#039;"
- }[m]));
+function nextQ(){
+  if(index < questions.length - 1){
+    index++;
+    saveState();
+    loadQ();
+  }
+}
+
+
+
+
+/* CALCULATOR */
+function toggleCalc(){
+ calculator.style.display=calculator.style.display=="block"?"none":"block";
 }
 </script>
-
 </body>
 </html>

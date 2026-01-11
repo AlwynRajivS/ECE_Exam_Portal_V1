@@ -215,7 +215,7 @@ header .grp{display:flex;gap:14px;align-items:center}
 </div>
 
 <script>
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyphohu6cE9hegyNRoYbjPb_ac4RfdEGkuJbsbPaPrh0ZmcqGcSQ1tB8S6a03gMYok/exec";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwaPrMAM9S8UNt9JGvsqS16Zgd2KsjES2fwZo6zpV4Zar2OUFvUjRX_j5HoUDf7VCUt/exec";
 
 const user=JSON.parse(sessionStorage.getItem("user"));
 const exam_id=sessionStorage.getItem("exam_id");
@@ -423,7 +423,7 @@ function saveState(){
  sessionStorage.setItem("index", index);
  sessionStorage.setItem("timeLeft", duration);
  sessionStorage.setItem("violations", violations);
- 
+ sessionStorage.setItem("qSignature", qSignature);
 
 }
 

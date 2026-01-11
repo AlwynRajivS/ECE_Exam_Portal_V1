@@ -175,14 +175,14 @@ Promise.all([
     assignedQids.includes(String(q[2]).trim())
   );
 
-  /* ===== OVERALL CALC ===== */
+  /* ===== OVERALL CALCULATION ===== */
   let OQ=0, OC=0, OW=0, ONA=0, OM=0, OTM=0;
 
   filtered.forEach(q=>{
     const qid = String(q[2]).trim();
     const s = answers[qid] || "";
     const c = q[8];
-    const m = Number(q[10] || 1);
+    const m = (q[1] === "PART B") ? 2 : Number(q[10] || 1);
 
     OQ++; OTM+=m;
     if(!s) ONA++;
@@ -209,14 +209,17 @@ Promise.all([
   const review = document.getElementById("review");
 
   Object.keys(grouped).forEach(part=>{
-    const cls = part==="PART A"?"part-a":"part-b";
+    const cls = part==="PART A" ? "part-a" : "part-b";
     review.innerHTML += `<div class="part-header ${cls}">${part}</div>`;
 
     let tq=0,c=0,w=0,na=0,mo=0,tm=0;
 
     grouped[part].forEach(q=>{
-      const qid=String(q[2]).trim();
-      const s=answers[qid]||"", ck=q[8], m=Number(q[10]||1);
+      const qid = String(q[2]).trim();
+      const s = answers[qid] || "";
+      const ck = q[8];
+      const m = (q[1] === "PART B") ? 2 : Number(q[10] || 1);
+
       tq++; tm+=m;
       if(!s) na++;
       else if(s===ck){c++; mo+=m;}
@@ -233,16 +236,18 @@ Promise.all([
     </div>`;
 
     grouped[part].forEach((q,i)=>{
-      const qid=String(q[2]).trim();
-      const s=answers[qid]||"", ck=q[8];
-      const m=q[10]||1;
-      const opt={A:q[4],B:q[5],C:q[6],D:q[7]};
-      const ok=s&&s===ck;
+      const qid = String(q[2]).trim();
+      const s = answers[qid] || "";
+      const ck = q[8];
+      const m = (q[1] === "PART B") ? 2 : (q[10] || 1);
+      const opt = {A:q[4],B:q[5],C:q[6],D:q[7]};
+      const ok = s && s===ck;
 
-      review.innerHTML+=`
+      review.innerHTML += `
       <div class="card">
-        <div class="question">Q${i+1}. ${q[3]}
-          <span class="mark-badge">${m} Mark</span>
+        <div class="question">
+          Q${i+1}. ${q[3]}
+          <span class="mark-badge">${m} Mark${m>1?'s':''}</span>
         </div>
         ${q[9]?`<img src="${q[9]}">`:""}
         <div class="answer">Your Answer:
@@ -259,5 +264,6 @@ Promise.all([
   });
 });
 </script>
+
 </body>
 </html>

@@ -215,7 +215,7 @@ header .grp{display:flex;gap:14px;align-items:center}
 </div>
 
 <script>
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwBD6OmTObpFPgF1OdTryacNZwymfqtHwnYvD1Eg7pngAhkg7WL02FNELD-bmAgYEsg/exec";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyp1NfoY2mj8wqTFUWjB0PeLi4zCWTHs946bmNqQkKgep7Ubrf8TGQ03Jn8sQKTyxpw/exec";
 
 const user=JSON.parse(sessionStorage.getItem("user"));
 const exam_id=sessionStorage.getItem("exam_id");
@@ -306,7 +306,7 @@ fetch(WEBAPP_URL,{method:"POST",
 /* QUESTIONS */
 fetch(WEBAPP_URL,{
  method:"POST",
- body:new URLSearchParams({action:"getExamQuestions",exam_id})
+ body:new URLSearchParams({action:"getQuestions",exam_id})
 })
 .then(r=>r.json())
 .then(allQ=>{

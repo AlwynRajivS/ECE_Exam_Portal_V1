@@ -271,9 +271,9 @@ function completedCard(e, msg, a, b, t){
 
    ${meta(a,b,t)}
 
-   ${
-     String(e[7]).toUpperCase() === "YES" && msg === "Already submitted"
-     ? `
+    ${
+  e[7]==="YES" && msg==="Already submitted"
+  ?  `
        <button class="btn review" onclick="viewResult('${e[0]}')">
         <i class="fa-solid fa-chart-bar"></i> View Result
        </button>

@@ -263,11 +263,12 @@ const upcomingCard=(e,s,a,b,t)=>`
 function completedCard(e,msg,a,b,t){
  return `
  <div class="exam-card">
-  <div class="ribbon completed">COMPLETED</div>
+  <div class="status-badge status-completed">COMPLETED</div>
+
   <div class="exam-info">
    <h4>${e[1]}</h4>
    <p>${msg}</p>
-   <div class="meta">Part A: ${a} | Part B: ${b} | Total: ${t}</div>
+   ${meta(a,b,t)}
   </div>
 
   ${
@@ -280,11 +281,12 @@ function completedCard(e,msg,a,b,t){
         <i class="fa-solid fa-file-lines"></i> Review Answers
       </button>
     `
-    : `<div class="info">Review not enabled for this exam</div>`
+    : `<div class="empty" style="margin-top:14px">Review not enabled</div>`
   }
 
  </div>`;
 }
+
 
 
 

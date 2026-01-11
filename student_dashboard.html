@@ -254,8 +254,12 @@ function liveCard(e,a,b,t){
  <div class="exam-info">
  <h4>${e[1]}</h4>
  <p>Exam ID: ${e[0]}</p>
- <div class="meta">Part A Question (1 Mark): ${a} | Part B Question (2 Marks): ${b} | Total Marks: ${t}</div>
- </div>
+ <div class="meta">
+  <div>Part A Question (1 Mark): ${a}</div>
+  <div>Part B Question (2 Marks): ${b}</div>
+  <div>Total Marks: ${t}</div>
+</div>
+
  <button class="btn start" onclick="startExam('${e[0]}')">
  <i class="fa-solid fa-play"></i> Start Exam</button>
  </div>`;
@@ -267,8 +271,12 @@ function upcomingCard(e,start,a,b,t){
  <div class="exam-info">
  <h4>${e[1]}</h4>
  <p>Starts: ${start.toLocaleString()}</p>
- <div class="meta">Part A Question (1 Mark): ${a} | Part B Question (2 Marks): ${b} | Total: ${t}</div>
- </div></div>`;
+ <div class="meta">
+  <div>Part A Question (1 Mark): ${a}</div>
+  <div>Part B Question (2 Marks): ${b}</div>
+  <div>Total Marks: ${t}</div>
+</div>
+
 }
 function completedCard(e,msg,a,b,t){
  return `
@@ -277,8 +285,12 @@ function completedCard(e,msg,a,b,t){
  <div class="exam-info">
  <h4>${e[1]}</h4>
  <p>${msg}</p>
- <div class="meta">Part A Question  (1 Mark): ${a} | Part B Question (2 Marks): ${b} | Total Marks: ${t}</div>
- </div>
+ <div class="meta">
+  <div>Part A Question (1 Mark): ${a}</div>
+  <div>Part B Question (2 Marks): ${b}</div>
+  <div>Total Marks: ${t}</div>
+</div>
+
  ${
   e[7]==="YES" && msg==="Already submitted"
   ? `

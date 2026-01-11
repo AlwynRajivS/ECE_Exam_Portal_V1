@@ -382,11 +382,15 @@ function escapeHTML(str) {
 
 
 function drawPalette(){
- palette.innerHTML="";
- questions.forEach((_,i)=>{
-  palette.innerHTML+=`<span id="p${i}" onclick="index=${i};loadQ()">${i+1}</span>`;
- });
+  palette.innerHTML = "";
+  questions.forEach((_, i)=>{
+    palette.innerHTML += `
+      <span id="p${i}" onclick="index=${i};loadQ()">
+        ${i+1}
+      </span>`;
+  });
 }
+
 function markReview(){document.getElementById("p"+index).classList.add("review")}
 function nextQ(){if(index<questions.length-1){index++;saveState();loadQ()}}
 

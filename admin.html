@@ -252,7 +252,37 @@ th{
   </table>
 </div>
 
+ <!-- ================= EXAM REPORT ================= -->
+<div class="card">
+<h3>Exam Report (Print / Export)</h3>
 
+<div class="grid">
+  <input id="rep_exam_id" placeholder="Exam ID">
+  <input id="rep_exam_name" placeholder="Exam Name">
+  <input id="rep_dept" placeholder="Department">
+  <input id="rep_year" placeholder="Year">
+  <input id="rep_section" placeholder="Section">
+</div>
+
+<button class="btn primary" onclick="generateReport()">Generate Report</button>
+<button class="btn success" onclick="downloadExcel()">Download Excel</button>
+<button class="btn secondary" onclick="downloadPDF()">Download PDF</button>
+
+<div class="table-scroll">
+  <table id="reportTable">
+    <thead>
+      <tr>
+        <th>S.No</th>
+        <th>Roll No</th>
+        <th>Student Name</th>
+        <th>Total Marks</th>
+        <th>Violations</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+</div>
 
 <!-- ================= LOGOUT ================= -->
 <button class="btn danger" onclick="logout()">Logout</button>
@@ -512,6 +542,99 @@ function reenable(exam_id, roll_no){
  }).then(()=>{ alert("Student Re-Enabled"); loadResults(); });
 }
 
+
+
+let REPORT_DATA = [];
+
+function generateReport(){
+
+  const exam_id = rep_exam_id.value.trim();
+  const dept = rep_dept.value.trim();
+  const year = rep_year.value.trim();
+  const section = rep_section.value.trim();
+
+  if(!exam_id){ alert("Enter Exam ID"); return; }
+
+  fetch(WEBAPP_URL + "?action=getResults&exam_id=" + exam_id,{method:"POST"})
+  .then(r=>r.json())
+  .then(results=>{
+
+    fetch(WEBAPP_URL + "?action=getViolations&exam_id=" + exam_id,{method:"POST"})
+    .then(vio=>{
+
+      fetch(WEBAPP_URL,{method:"POST",
+        body:new URLSearchParams({action:"bulkStudents",json:"[]"})
+      });
+
+      REPORT_DATA=[];
+      const tbody=document.querySelector("#reportTable tbody");
+      tbody.innerHTML="";
+
+      let sno=1;
+
+      results.forEach(r=>{
+        const roll=r[1], marks=r[2], v=r[3];
+
+        REPORT_DATA.push([sno, roll, "", marks, v]);
+
+        tbody.innerHTML+=`
+        <tr>
+          <td>${sno++}</td>
+          <td>${roll}</td>
+          <td>-</td>
+          <td>${marks}</td>
+          <td>${v}</td>
+        </tr>`;
+      });
+    });
+  });
+}
+
+/* ===== EXCEL ===== */
+function downloadExcel(){
+ if(!REPORT_DATA.length){alert("Generate report first");return;}
+ const ws = XLSX.utils.aoa_to_sheet([
+  ["COLLEGE NAME"],
+  [],
+  [`Exam ID: ${rep_exam_id.value}`],
+  [`Exam Name: ${rep_exam_name.value}`],
+  [`Dept: ${rep_dept.value} | Year: ${rep_year.value} | Section: ${rep_section.value}`],
+  [],
+  ["S.No","Roll No","Student Name","Total Marks","Violations"],
+  ...REPORT_DATA
+ ]);
+ const wb = XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb, ws, "Report");
+ XLSX.writeFile(wb,"Exam_Report.xlsx");
+}
+
+/* ===== PDF ===== */
+function downloadPDF(){
+ if(!REPORT_DATA.length){alert("Generate report first");return;}
+ const { jsPDF } = window.jspdf;
+ const doc = new jsPDF();
+
+ doc.setFontSize(14);
+ doc.text("COLLEGE NAME",105,15,{align:"center"});
+ doc.setFontSize(11);
+ doc.text(`Exam ID: ${rep_exam_id.value}`,14,25);
+ doc.text(`Exam Name: ${rep_exam_name.value}`,14,32);
+ doc.text(`Dept: ${rep_dept.value}   Year: ${rep_year.value}   Section: ${rep_section.value}`,14,39);
+
+ doc.autoTable({
+   startY:45,
+   head:[["S.No","Roll No","Student Name","Total Marks","Violations"]],
+   body:REPORT_DATA,
+   theme:"grid",
+   styles:{halign:"center"},
+   headStyles:{fillColor:[21,101,192]}
+ });
+
+ doc.save("Exam_Report.pdf");
+}
+
+
+
 /* ================= LOGOUT ================= */
 function logout(){
  sessionStorage.clear();
@@ -520,8 +643,12 @@ function logout(){
 
 loadExams();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
 
 </body>
 </html>
+
 
 

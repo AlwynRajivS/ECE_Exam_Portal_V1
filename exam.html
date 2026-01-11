@@ -31,7 +31,10 @@ header .grp{display:flex;gap:14px;align-items:center}
 
 .main{display:flex;min-height:90vh}
 .qbox{flex:1;background:#fff;padding:28px}
-.palette{width:260px;background:#f7f9fc;padding:18px;border-left:1px solid #ddd}
+.palette{
+ width:260px;background:#f7f9fc;
+ padding:18px;border-left:1px solid #ddd
+}
 
 .section{
  background:#e3f2fd;color:#0d47a1;
@@ -39,8 +42,7 @@ header .grp{display:flex;gap:14px;align-items:center}
  font-weight:600;display:inline-block
 }
 .qimg{
- max-width:100%;
- margin:16px 0;
+ max-width:100%;margin:14px auto;
  border-radius:14px;
  box-shadow:0 6px 18px rgba(0,0,0,.25)
 }
@@ -48,6 +50,7 @@ header .grp{display:flex;gap:14px;align-items:center}
  background:#e3f2fd;padding:14px 16px;
  border-radius:14px;margin:12px 0;
  cursor:pointer;transition:.2s;
+ display:flex;gap:10px;align-items:center
 }
 .option:hover{background:#bbdefb}
 .option.selected{
@@ -78,6 +81,62 @@ header .grp{display:flex;gap:14px;align-items:center}
 .answered{background:#2e7d32!important}
 .review{background:#fb8c00!important}
 
+.legend span{margin-right:10px;font-size:13px}
+.legend i{margin-right:4px}
+
+.modal{
+ position:fixed;inset:0;
+ background:rgba(0,0,0,.6);
+ display:none;align-items:center;
+ justify-content:center;z-index:100
+}
+.modal-box{
+ background:#fff;border-radius:18px;
+ padding:24px;max-width:360px;
+ width:90%;text-align:center
+}
+
+.calculator{
+ position:fixed;right:20px;bottom:20px;
+ width:300px;background:#263238;
+ color:#fff;border-radius:18px;
+ padding:16px;display:none;
+ box-shadow:0 18px 40px rgba(0,0,0,.5);
+ z-index:200
+}
+.calc-screen{
+ width:100%;height:44px;
+ background:#000;color:#0f0;
+ font-size:18px;border:none;
+ margin-bottom:10px;
+ padding:6px;text-align:right
+}
+.calc-btn{
+ width:22%;margin:1%;
+ padding:10px;background:#37474f;
+ color:#fff;border:none;
+ border-radius:10px;cursor:pointer
+}
+
+/* 🔒 PROCTOR OVERLAY */
+#proctorOverlay{
+ position:fixed;inset:0;
+ background:rgba(198,40,40,.95); /* 🔴 RED */
+ color:#fff;
+ display:none;
+ z-index:1000;
+ align-items:center;
+ justify-content:center;
+ text-align:center;
+}
+
+#proctorOverlay h2{
+ font-size:26px;
+ margin-bottom:10px;
+}
+
+#proctorOverlay.active{display:flex}
+
 @media(max-width:900px){
  .main{flex-direction:column}
  .palette{width:100%;border-left:none;border-top:1px solid #ddd}
@@ -95,6 +154,11 @@ header .grp{display:flex;gap:14px;align-items:center}
  <div class="grp">
   ⏱ <span id="timer">00:00</span>
   ⚠ <span id="vio">0 / 0</span>
+  <button id="calcBtn" class="btn"
+   style="display:none;background:#455a64"
+   onclick="toggleCalc()">
+   <i class="fa-solid fa-calculator"></i>
+  </button>
  </div>
 </header>
 
@@ -102,9 +166,13 @@ header .grp{display:flex;gap:14px;align-items:center}
 
 <div class="main">
  <div class="qbox">
-  <div id="loading" style="text-align:center;padding:40px;color:#78909c">
-   ⏳ Loading questions…
-  </div>
+ <div id="loading" style="
+ font-size:18px;
+ color:#78909c;
+ text-align:center;
+ padding:40px 0;">
+ ⏳ Loading questions… Please wait
+</div>
 
   <div id="question"></div>
 
@@ -116,143 +184,280 @@ header .grp{display:flex;gap:14px;align-items:center}
     <i class="fa-solid fa-arrow-right"></i> Next
    </button>
    <button id="submitBtn" class="btn submit"
-    onclick="submitExam()" disabled>
+    onclick="confirmSubmit()" disabled>
     <i class="fa-solid fa-paper-plane"></i> Submit
    </button>
+  </div>
+
+  <div class="legend" style="margin-top:20px">
+   <span><i class="fa-solid fa-circle" style="color:#b0bec5"></i> Unanswered</span>
+   <span><i class="fa-solid fa-circle" style="color:#2e7d32"></i> Answered</span>
+   <span><i class="fa-solid fa-circle" style="color:#fb8c00"></i> Review</span>
   </div>
  </div>
 
  <div class="palette" id="palette"></div>
 </div>
 
+<div class="modal" id="modal">
+ <div class="modal-box">
+  <h3>Submit Exam?</h3>
+  <button class="btn submit" onclick="submitExam()">Yes</button>
+  <button class="btn next" onclick="closeModal()">Cancel</button>
+ </div>
+</div>
+
+<div id="proctorOverlay">
+ <div>
+  <h2>⚠ Exam Security Alert</h2>
+  <p id="proctorMsg"></p>
+ </div>
+</div>
+
 <script>
-const WEBAPP_URL =
-"https://script.google.com/macros/s/AKfycbwaPrMAM9S8UNt9JGvsqS16Zgd2KsjES2fwZo6zpV4Zar2OUFvUjRX_j5HoUDf7VCUt/exec";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwaPrMAM9S8UNt9JGvsqS16Zgd2KsjES2fwZo6zpV4Zar2OUFvUjRX_j5HoUDf7VCUt/exec";
 
-const user = JSON.parse(sessionStorage.getItem("user"));
-const exam_id = sessionStorage.getItem("exam_id");
-studentInfo.innerText = `${user.name} (${user.roll})`;
+const user=JSON.parse(sessionStorage.getItem("user"));
+const exam_id=sessionStorage.getItem("exam_id");
+studentInfo.innerText=`${user.name} (${user.roll})`;
 
-let questions=[], index=0, answers={}, duration=0;
+let questions=[],index=0,answers={},violations=0;
+let violationLog=[],duration=0,limit=0,partA=0,partB=0;
 
-/* LOAD EXAM META */
-fetch(WEBAPP_URL,{
- method:"POST",
- body:new URLSearchParams({action:"getExamMeta",exam_id})
-}).then(r=>r.json()).then(m=>{
- duration = m.duration*60;
+const overlay=document.getElementById("proctorOverlay");
+const proctorMsg=document.getElementById("proctorMsg");
+
+
+
+/* FULLSCREEN */
+function forceFullscreen(){
+ if(!document.fullscreenElement){
+  document.documentElement.requestFullscreen().catch(()=>{});
+ }
+}
+document.addEventListener("DOMContentLoaded",forceFullscreen);
+document.addEventListener("click",forceFullscreen);
+
+/* VIOLATIONS */
+function violate(type,auto=false){
+ violations++;
+ vio.innerText=`${violations} / ${limit}`;
+ violationLog.push({type,time:new Date().toLocaleString()});
+ proctorMsg.innerText =
+  `Violation: ${type} | Remaining: ${limit - violations}`;
+ overlay.classList.add("active");
+ setTimeout(()=>overlay.classList.remove("active"),2000);
+ fetch(WEBAPP_URL,{method:"POST",
+  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
+ });
+ if (violations >= limit && questions.length > 0) {
+ submitExam();
+}
+
+}
+
+document.addEventListener("fullscreenchange",()=>{
+ if(!document.fullscreenElement) violate("Exit Fullscreen",true);
+});
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden) violate("Tab Switch");
+});
+["copy","cut","contextmenu"].forEach(e=>{
+ document.addEventListener(e,x=>{x.preventDefault();violate(e)});
 });
 
-/* LOAD QUESTIONS */
+
+window.addEventListener("beforeunload", () => {
+ sessionStorage.setItem("resume", "YES");
+ violate("Page Reload / Refresh");
+});
+
+
+/* EXAM META */
+fetch(WEBAPP_URL,{method:"POST",
+ body:new URLSearchParams({action:"getExamMeta",exam_id})
+}).then(r=>r.json()).then(m=>{
+ duration=m.duration*60;
+ limit=m.violation_limit;
+ vio.innerText=`0 / ${limit}`;
+ partA=m.partA;partB=m.partB;
+ if(m.calculator==="YES") calcBtn.style.display="inline-flex";
+});
+
+/* QUESTIONS */
 fetch(WEBAPP_URL,{
  method:"POST",
  body:new URLSearchParams({action:"getQuestions",exam_id})
-}).then(r=>r.json()).then(allQ=>{
+})
+.then(r=>r.json())
+.then(allQ=>{
 
- const shuffle=a=>[...a].sort(()=>Math.random()-0.5);
+  function shuffle(arr){
+    return [...arr].sort(() => Math.random() - 0.5);
+  }
 
- const A = shuffle(allQ.filter(q=>q[1]==="PART A"));
- const B = shuffle(allQ.filter(q=>q[1]==="PART B"));
+  const partAQuestions = allQ.filter(q => q[1] === "PART A");
+  const partBQuestions = allQ.filter(q => q[1] === "PART B");
 
- questions = A.concat(B);
+  const A = shuffle(partAQuestions).slice(0, Number(partA));
+  const B = shuffle(partBQuestions).slice(0, Number(partB));
 
- document.getElementById("loading").style.display="none";
- drawPalette();
- restoreState();
- loadQ();
- startTimer();
+  // ✅ 1️⃣ FINAL question list (FIRST TIME)
+  questions = A.concat(B);
+
+  // ✅ 2️⃣ CREATE SIGNATURE HERE (THIS IS THE ANSWER)
+  const currentSig = questions.map(q => q[2]).join(",");
+
+  // store ONLY if not already stored (first attempt)
+  if(!sessionStorage.getItem("qSignature")){
+    sessionStorage.setItem("qSignature", currentSig);
+  }
+
+  document.getElementById("loading").style.display = "none";
+
+  console.log("Expected:", Number(partA) + Number(partB));
+  console.log("Loaded:", questions.length);
+
+  drawPalette();
+
+  // ✅ 3️⃣ NOW restore state safely
+  restoreState();
+
+  loadQ();
+  startTimer();
 });
 
-/* RENDER QUESTION */
+
+
 function loadQ(){
+ if(index < 0 || index >= questions.length){
+   index = 0;
+ }
  const q = questions[index];
 
  question.innerHTML = `
   <span class="section">${q[1]}</span>
-  <h3>Q${index+1}. ${q[3]}</h3>
-  ${q[9] ? `<img class="qimg" src="${q[9]}">` : ""}
+  <h3>Q${index+1}. ${escapeHTML(q[3])}</h3>
   ${["A","B","C","D"].map((o,i)=>`
-   <div class="option ${answers[index]?.ans===o?'selected':''}"
-    onclick="selectAns('${o}')">
-    ${q[4+i]}
-   </div>`).join("")}
+    <div class="option ${answers[index]?.ans===o?'selected':''}"
+     onclick="selectAns('${o}')">${q[4+i]}</div>
+  `).join("")}
  `;
 
- submitBtn.disabled = index !== questions.length-1;
- bar.style.width = ((index+1)/questions.length*100)+"%";
+ submitBtn.disabled = index !== questions.length - 1;
+ bar.style.width = ((index + 1) / questions.length * 100) + "%";
 }
 
-/* SELECT ANSWER */
 function selectAns(a){
- answers[index] = { qid: questions[index][2], ans: a };
- document.getElementById("p"+index)?.classList.add("answered");
- saveState();
-}
-
-/* NAVIGATION */
-function nextQ(){
- if(index < questions.length-1){
-  index++;
+  answers[index] = {
+    qid: questions[index][2],
+    ans: a
+  };
+  document.getElementById("p"+index).classList.add("answered");
   saveState();
   loadQ();
- }
 }
 
-/* PALETTE */
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
 function drawPalette(){
  palette.innerHTML="";
  questions.forEach((_,i)=>{
-  palette.innerHTML +=
-   `<span id="p${i}" onclick="index=${i};loadQ()">${i+1}</span>`;
+  palette.innerHTML+=`<span id="p${i}" onclick="index=${i};loadQ()">${i+1}</span>`;
  });
 }
-
-function markReview(){
- document.getElementById("p"+index)?.classList.add("review");
-}
+function markReview(){document.getElementById("p"+index).classList.add("review")}
+function nextQ(){if(index<questions.length-1){index++;saveState();loadQ()}}
 
 /* TIMER */
+let timerRef=null;
+
 function startTimer(){
- setInterval(()=>{
-  const m=Math.floor(duration/60), s=duration%60;
+ if(timerRef) clearInterval(timerRef);
+ timerRef=setInterval(()=>{
+  const m=Math.floor(duration/60),
+        s=duration%60;
   timer.innerText=`${m}:${String(s).padStart(2,"0")}`;
   duration--;
   saveState();
+  if(duration<0) submitExam();
  },1000);
 }
 
-/* SUBMIT */
-function submitExam(){
- const final={};
- questions.forEach((q,i)=>{
-  final[q[2]] = answers[i]?.ans || "";
- });
 
- fetch(WEBAPP_URL,{
-  method:"POST",
+/* SUBMIT */
+function confirmSubmit(){modal.style.display="flex"}
+function closeModal(){modal.style.display="none"}
+
+function submitExam(){
+ const finalAnswers={};
+questions.forEach((q, i) => {
+  finalAnswers[String(q[2]).trim()] =
+    answers[i]?.ans || "";
+});
+
+
+ fetch(WEBAPP_URL,{method:"POST",
   body:new URLSearchParams({
    action:"submitExam",
    exam_id,
    roll_no:user.roll,
-   answers_json:JSON.stringify(final)
+   answers_json:JSON.stringify(finalAnswers),
+   violation_log:JSON.stringify(violationLog),
+   total_violations:violations,
+   //status:"SUBMITTED"
   })
  }).then(()=>location.href="summary.html");
 }
 
-/* STATE */
 function saveState(){
- sessionStorage.setItem("answers",JSON.stringify(answers));
- sessionStorage.setItem("index",index);
- sessionStorage.setItem("timeLeft",duration);
+ sessionStorage.setItem("answers", JSON.stringify(answers));
+ sessionStorage.setItem("index", index);
+ sessionStorage.setItem("timeLeft", duration);
+ sessionStorage.setItem("violations", violations);
+ sessionStorage.setItem("qSignature", qSignature);
+
 }
+
 function restoreState(){
+ const savedSig = sessionStorage.getItem("qSignature");
+ const currentSig = questions.map(q=>q[2]).join(",");
+
+ if(savedSig !== currentSig){
+ sessionStorage.removeItem("answers");
+ sessionStorage.removeItem("index");
+ sessionStorage.removeItem("timeLeft");
+ sessionStorage.removeItem("violations");
+ answers = {};
+ index = 0;
+ return;
+}
+
  if(sessionStorage.getItem("answers")){
-  answers = JSON.parse(sessionStorage.getItem("answers"));
-  index = Number(sessionStorage.getItem("index")||0);
-  duration = Number(sessionStorage.getItem("timeLeft")||duration);
+   answers = JSON.parse(sessionStorage.getItem("answers"));
+   index = Number(sessionStorage.getItem("index") || 0);
+   duration = Number(sessionStorage.getItem("timeLeft") || duration);
+   violations = Number(sessionStorage.getItem("violations") || 0);
+   vio.innerText=`${violations} / ${limit}`;
  }
 }
-</script>
 
+
+
+
+
+/* CALCULATOR */
+function toggleCalc(){
+ calculator.style.display=calculator.style.display=="block"?"none":"block";
+}
+</script>
 </body>
 </html>

@@ -32,6 +32,51 @@ header{
   margin:auto;
   padding:20px;
 }
+
+/* ===== SUMMARY ===== */
+.overall-summary,.part-summary{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-bottom:20px;
+}
+.summary-box{
+  flex:1;
+  min-width:150px;
+  background:#fff;
+  border-radius:16px;
+  padding:14px;
+  box-shadow:0 6px 16px rgba(0,0,0,.15);
+  text-align:center;
+  font-size:13px;
+}
+.summary-box strong{
+  display:block;
+  font-size:20px;
+}
+
+/* ===== PART HEADER ===== */
+.part-header{
+  padding:14px 18px;
+  border-radius:16px;
+  margin:25px 0 12px;
+  font-weight:700;
+  font-size:18px;
+  display:flex;
+  justify-content:space-between;
+}
+.part-a{
+  background:#e8f5e9;
+  color:#1b5e20;
+  border-left:6px solid #2e7d32;
+}
+.part-b{
+  background:#fff3e0;
+  color:#e65100;
+  border-left:6px solid #fb8c00;
+}
+
+/* ===== CARD ===== */
 .card{
   background:#fff;
   margin-bottom:18px;
@@ -41,7 +86,7 @@ header{
 }
 .question{
   font-weight:600;
-  margin-bottom:12px;
+  margin-bottom:10px;
 }
 .answer{
   margin:6px 0;
@@ -59,10 +104,27 @@ header{
 }
 .badge.correct{background:#2e7d32}
 .badge.wrong{background:#c62828}
+.mark-badge{
+  background:#263238;
+  color:#fff;
+  padding:4px 10px;
+  border-radius:12px;
+  font-size:11px;
+  margin-left:8px;
+}
 img{
   max-width:100%;
   border-radius:10px;
   margin-top:10px;
+}
+
+/* ===== MOBILE COMPACT ===== */
+@media(max-width:600px){
+  header{font-size:16px;padding:14px;}
+  .card{padding:14px}
+  .question{font-size:14px}
+  .answer{font-size:12px}
+  .summary-box strong{font-size:16px}
 }
 </style>
 </head>
@@ -71,7 +133,11 @@ img{
 
 <header>📄 Answer Review</header>
 <div class="sub-header" id="studentInfo"></div>
-<div class="container" id="review"></div>
+
+<div class="container">
+  <div id="overallSummary"></div>
+  <div id="review"></div>
+</div>
 
 <script>
 const WEBAPP_URL =
@@ -80,9 +146,8 @@ const WEBAPP_URL =
 const exam_id = sessionStorage.getItem("exam_id");
 const user = JSON.parse(sessionStorage.getItem("user"));
 
-document.getElementById("studentInfo").innerHTML = `
-👨‍🎓 ${user.name} | 🆔 ${user.roll} | 📝 Exam ID: ${exam_id}
-`;
+document.getElementById("studentInfo").innerHTML =
+`👨‍🎓 ${user.name} | 🆔 ${user.roll} | 📝 Exam ID: ${exam_id}`;
 
 Promise.all([
   fetch(WEBAPP_URL,{
@@ -101,81 +166,98 @@ Promise.all([
 ])
 .then(([questions, responses])=>{
 
-  const review = document.getElementById("review");
+  if(!responses.length) return;
 
-  if(!responses.length){
-    review.innerHTML = `<p>No responses found.</p>`;
-    return;
-  }
+  const answers = JSON.parse(responses[0][2]);
+  const assignedQids = responses[0][3].split(",").map(q=>q.trim());
 
-  /* ===== READ RESPONSE DATA ===== */
-  const answers = JSON.parse(responses[0][2]);          // answers_json
-  const assignedQids = responses[0][3]                  // assigned_qids
-    .split(",")
-    .map(q=>q.trim());
-
-  /* ===== FILTER ONLY ASSIGNED QUESTIONS ===== */
-  const filteredQuestions = questions.filter(q =>
+  const filtered = questions.filter(q =>
     assignedQids.includes(String(q[2]).trim())
   );
 
-  /* ===== RENDER REVIEW ===== */
-  filteredQuestions.forEach((q, index)=>{
+  /* ===== OVERALL CALC ===== */
+  let OQ=0, OC=0, OW=0, ONA=0, OM=0, OTM=0;
 
+  filtered.forEach(q=>{
     const qid = String(q[2]).trim();
-    const studentKey = answers[qid] || "";
-    const correctKey = q[8];
+    const s = answers[qid] || "";
+    const c = q[8];
+    const m = Number(q[10] || 1);
 
-    const optionMap = {
-      A: q[4],
-      B: q[5],
-      C: q[6],
-      D: q[7]
-    };
+    OQ++; OTM+=m;
+    if(!s) ONA++;
+    else if(s===c){OC++; OM+=m;}
+    else OW++;
+  });
 
-    const studentText = studentKey
-      ? optionMap[studentKey]
-      : "Not Answered";
+  document.getElementById("overallSummary").innerHTML = `
+  <div class="overall-summary">
+    <div class="summary-box"><strong>${OQ}</strong>Total Questions</div>
+    <div class="summary-box"><strong style="color:#2e7d32">${OC}</strong>Correct</div>
+    <div class="summary-box"><strong style="color:#c62828">${OW}</strong>Wrong</div>
+    <div class="summary-box"><strong>${ONA}</strong>Not Answered</div>
+    <div class="summary-box"><strong>${OM}/${OTM}</strong>Total Marks</div>
+  </div>`;
 
-    const correctText = optionMap[correctKey];
-    const isCorrect = studentKey && studentKey === correctKey;
+  /* ===== GROUP BY PART ===== */
+  const grouped = {};
+  filtered.forEach(q=>{
+    if(!grouped[q[1]]) grouped[q[1]]=[];
+    grouped[q[1]].push(q);
+  });
+
+  const review = document.getElementById("review");
+
+  Object.keys(grouped).forEach(part=>{
+    const cls = part==="PART A"?"part-a":"part-b";
+    review.innerHTML += `<div class="part-header ${cls}">${part}</div>`;
+
+    let tq=0,c=0,w=0,na=0,mo=0,tm=0;
+
+    grouped[part].forEach(q=>{
+      const qid=String(q[2]).trim();
+      const s=answers[qid]||"", ck=q[8], m=Number(q[10]||1);
+      tq++; tm+=m;
+      if(!s) na++;
+      else if(s===ck){c++; mo+=m;}
+      else w++;
+    });
 
     review.innerHTML += `
-    <div class="card">
-      <div class="question">
-        Q${index+1}. ${q[3]}
-      </div>
-
-      ${q[9] ? `<img src="${q[9]}">` : ""}
-
-      <div class="answer">
-        Your Answer:
-        <span class="${isCorrect?'correct':'wrong'}">
-          ${studentText}
-        </span>
-      </div>
-
-      <div class="answer">
-        Correct Answer:
-        <span class="correct">
-          ${correctText}
-        </span>
-      </div>
-
-      <span class="badge ${isCorrect?'correct':'wrong'}">
-        ${studentKey
-          ? (isCorrect ? "Correct" : "Wrong")
-          : "Not Answered"}
-      </span>
+    <div class="part-summary">
+      <div class="summary-box"><strong>${tq}</strong>Questions</div>
+      <div class="summary-box"><strong style="color:#2e7d32">${c}</strong>Correct</div>
+      <div class="summary-box"><strong style="color:#c62828">${w}</strong>Wrong</div>
+      <div class="summary-box"><strong>${na}</strong>Not Answered</div>
+      <div class="summary-box"><strong>${mo}/${tm}</strong>Marks</div>
     </div>`;
+
+    grouped[part].forEach((q,i)=>{
+      const qid=String(q[2]).trim();
+      const s=answers[qid]||"", ck=q[8];
+      const m=q[10]||1;
+      const opt={A:q[4],B:q[5],C:q[6],D:q[7]};
+      const ok=s&&s===ck;
+
+      review.innerHTML+=`
+      <div class="card">
+        <div class="question">Q${i+1}. ${q[3]}
+          <span class="mark-badge">${m} Mark</span>
+        </div>
+        ${q[9]?`<img src="${q[9]}">`:""}
+        <div class="answer">Your Answer:
+          <span class="${ok?'correct':'wrong'}">${s?opt[s]:"Not Answered"}</span>
+        </div>
+        <div class="answer">Correct Answer:
+          <span class="correct">${opt[ck]}</span>
+        </div>
+        <span class="badge ${ok?'correct':'wrong'}">
+          ${s?(ok?"Correct":"Wrong"):"Not Answered"}
+        </span>
+      </div>`;
+    });
   });
-})
-.catch(err=>{
-  document.getElementById("review").innerHTML =
-    `<p>Error loading review.</p>`;
-  console.error(err);
 });
 </script>
-
 </body>
 </html>

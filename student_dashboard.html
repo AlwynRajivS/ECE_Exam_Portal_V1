@@ -260,26 +260,30 @@ const upcomingCard=(e,s,a,b,t)=>`
  </div>
 </div>`;
 
-function completedCard(e,msg,a,b,t){
+const completedCard=(e,msg,a,b,t)=>{
+
+ const reviewEnabled = String(e[7]).toUpperCase() === "YES";
+
  return `
  <div class="exam-card">
- <div class="ribbon completed">COMPLETED</div>
- <div class="exam-info">
- <h4>${e[1]}</h4>
- <p>${msg}</p>
- <div class="meta">Part A: ${a} | Part B: ${b} | Total: ${t}</div>
- </div>
- ${
-  e[7]==="YES" && msg==="Already submitted"
-  ? `
+  <div class="status-badge status-completed">${msg}</div>
+  <div class="exam-info">
+   <h4>${e[1]}</h4>
+   ${meta(a,b,t)}
+
    <button class="btn review" onclick="viewResult('${e[0]}')">
-   <i class="fa-solid fa-chart-bar"></i> View Result</button>
+    <i class="fa-solid fa-chart-bar"></i> View Result
+   </button>
+
+   ${reviewEnabled ? `
    <button class="btn review" onclick="reviewExam('${e[0]}')">
-   <i class="fa-solid fa-file-lines"></i> Review Answers</button>`
-  : `<div class="info">${msg}</div>`
- }
+    <i class="fa-solid fa-file-lines"></i> Review Answers
+   </button>` : ``}
+
+  </div>
  </div>`;
-}
+};
+
 
 function startExam(id){sessionStorage.setItem("exam_id",id);location.href="instructions.html";}
 function viewResult(id){sessionStorage.setItem("exam_id",id);location.href="result.html";}

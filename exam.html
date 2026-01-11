@@ -330,32 +330,45 @@ fetch(WEBAPP_URL,{
 
 
 function loadQ(){
- if(index < 0 || index >= questions.length){
-   index = 0;
- }
- const q = questions[index];
+  if(index < 0 || index >= questions.length){
+    index = 0;
+  }
 
- question.innerHTML = `
-  <span class="section">${q[1]}</span>
-  <h3>Q${index+1}. ${escapeHTML(q[3])}</h3>
-  ${["A","B","C","D"].map((o,i)=>`
-    <div class="option ${answers[index]?.ans===o?'selected':''}"
-     onclick="selectAns('${o}')">${q[4+i]}</div>
-  `).join("")}
- `;
+  const q = questions[index];
 
- submitBtn.disabled = index !== questions.length - 1;
- bar.style.width = ((index + 1) / questions.length * 100) + "%";
+  question.innerHTML = `
+    <span class="section">${q[1]}</span>
+    <h3>Q${index+1}. ${escapeHTML(q[3])}</h3>
+
+    ${q[9] ? `<img class="qimg" src="${q[9]}">` : ""}
+
+    ${["A","B","C","D"].map((o,i)=>`
+      <div class="option ${answers[index]?.ans === o ? 'selected' : ''}"
+        onclick="selectAns('${o}')">
+        ${q[4+i]}
+      </div>
+    `).join("")}
+  `;
+
+  submitBtn.disabled = index !== questions.length - 1;
+  bar.style.width = ((index + 1) / questions.length * 100) + "%";
 }
+
 
 function selectAns(a){
   answers[index] = {
     qid: questions[index][2],
     ans: a
   };
-  document.getElementById("p"+index).classList.add("answered");
+
+  const p = document.getElementById("p"+index);
+  if(p){
+    p.classList.add("answered");
+    p.classList.remove("review");
+  }
+
   saveState();
-  loadQ();
+  loadQ();   // 🔥 force redraw (important)
 }
 
 function escapeHTML(str) {
@@ -423,8 +436,7 @@ function saveState(){
  sessionStorage.setItem("index", index);
  sessionStorage.setItem("timeLeft", duration);
  sessionStorage.setItem("violations", violations);
- sessionStorage.setItem("qSignature", qSignature);
-
+ 
 }
 
 function restoreState(){

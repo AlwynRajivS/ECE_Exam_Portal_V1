@@ -466,6 +466,13 @@ function restoreState(){
  }
 }
 
+function nextQ(){
+  if(index < questions.length - 1){
+    index++;
+    saveState();
+    loadQ();
+  }
+}
 
 
 

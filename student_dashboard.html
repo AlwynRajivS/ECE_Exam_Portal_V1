@@ -15,7 +15,6 @@
   --green:#2e7d32;
   --orange:#ef6c00;
   --gray:#546e7a;
-  --red:#c62828;
   --bg:#eef2f7;
 }
 *{box-sizing:border-box;font-family:'Segoe UI',system-ui}
@@ -44,124 +43,120 @@ header{
   margin-bottom:36px;
 }
 .profile i{font-size:66px;color:var(--blue)}
-.profile h3{margin:0;color:var(--blue)}
-.profile p{margin:6px 0;color:#444;font-size:14px}
 
 /* SECTION */
 .section{margin-bottom:40px}
 .section-title{
   display:flex;
   align-items:center;
-  gap:6px;
-  font-size:18px;
+  gap:8px;
+  font-size:20px;
   color:var(--blue);
 }
-.section-title i{font-size:14px;color:#f9a825}
 
-/* EXAM CARD */
+/* CARD */
 .exam-card{
   background:#fff;
-  border-radius:28px;
-  padding:28px;
-  margin-bottom:22px;
-  box-shadow:0 18px 38px rgba(0,0,0,.18);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  text-align:center;
+  border-radius:30px;
+  padding:30px 26px 26px;
+  margin-bottom:24px;
+  box-shadow:0 20px 44px rgba(0,0,0,.18);
   position:relative;
+  text-align:center;
 }
-.ribbon{
+
+/* STATUS BADGE (FIXED – NO OVERLAP) */
+.status-badge{
   position:absolute;
   top:18px;
-  left:-42px;
-  transform:rotate(-45deg);
-  width:160px;
+  right:18px;
+  padding:6px 14px;
   font-size:12px;
   font-weight:700;
   color:#fff;
-  padding:6px 0;
+  border-radius:20px;
 }
-.live{background:#2e7d32}
-.upcoming{background:#ef6c00}
-.completed{background:#546e7a}
+.status-live{background:#2e7d32}
+.status-upcoming{background:#ef6c00}
+.status-completed{background:#546e7a}
 
-/* LIVE ANIMATION */
-@keyframes pulseGlow{
+/* LIVE PULSE */
+@keyframes pulse{
   0%{box-shadow:0 0 0 rgba(46,125,50,.4)}
-  50%{box-shadow:0 0 28px rgba(46,125,50,.7)}
+  50%{box-shadow:0 0 22px rgba(46,125,50,.7)}
   100%{box-shadow:0 0 0 rgba(46,125,50,.4)}
 }
-.ribbon.live{animation:pulseGlow 2.5s infinite}
+.status-live{animation:pulse 2.4s infinite}
 
-.exam-info h4{margin:0;color:var(--blue)}
-.exam-info p{margin:6px 0;font-size:14px;color:#555}
+/* INFO */
+.exam-info h4{
+  margin:14px 0 6px;
+  font-size:22px;
+  color:var(--blue);
+}
+.exam-info p{margin:4px 0;color:#666}
 
-/* META INFO */
+/* META */
 .meta{
-  margin-top:12px;
-  padding:12px 16px;
-  border-radius:16px;
+  margin:18px auto;
+  padding:18px;
+  border-radius:20px;
   background:#e3f2fd;
-  font-weight:600;
   width:100%;
+  max-width:420px;
+  text-align:left;
 }
 .meta .row{
   display:flex;
   align-items:center;
-  gap:8px;
-  margin:6px 0;
-  font-size:14px;
+  gap:10px;
+  margin:8px 0;
+  font-weight:600;
   color:#0d47a1;
 }
 .meta .row i{color:#1976d2}
 .meta .total{
-  margin-top:8px;
-  padding-top:8px;
-  border-top:1px dashed #90caf9;
-  font-size:16px;
+  margin-top:10px;
+  padding-top:10px;
+  border-top:2px dashed #90caf9;
+  font-size:18px;
   font-weight:800;
   color:#2e7d32;
 }
 
 /* BUTTONS */
 .btn{
-  padding:14px 30px;
+  padding:16px;
   border:none;
-  border-radius:20px;
-  font-size:15px;
+  border-radius:30px;
+  font-size:16px;
   cursor:pointer;
   color:#fff;
   display:flex;
-  gap:8px;
+  gap:10px;
   align-items:center;
-  margin-top:16px;
+  justify-content:center;
+  width:100%;
+  margin-top:14px;
 }
 .start{background:#2e7d32}
 .review{background:#1976d2}
-.logout{background:#c62828;width:100%;justify-content:center}
+.logout{background:#c62828;margin-top:30px}
 
+/* EMPTY */
 .empty{
   background:#fff;
   padding:26px;
-  border-radius:24px;
+  border-radius:26px;
   text-align:center;
   color:#777;
   box-shadow:0 10px 22px rgba(0,0,0,.14);
 }
-.info{
-  margin-top:14px;
-  background:#fff3e0;
-  padding:14px;
-  border-radius:16px;
-  color:#e65100;
-}
 
-/* MOBILE COMPACT */
+/* MOBILE */
 @media(max-width:600px){
   .profile{flex-direction:column;text-align:center}
-  .btn{width:100%;justify-content:center}
-  .exam-card{padding:18px}
+  .exam-card{padding:24px}
 }
 </style>
 </head>
@@ -206,9 +201,8 @@ profile.innerHTML=`
 <i class="fa-solid fa-circle-user"></i>
 <div>
 <h3>${user.name}</h3>
-<p><b>Roll No:</b> ${user.roll}</p>
-<p><b>Department:</b> ${user.dept}</p>
-<p><b>Year / Section:</b> ${user.year} - ${user.section}</p>
+<p>${user.roll} | ${user.dept}</p>
+<p>${user.year} - ${user.section}</p>
 </div>`;
 
 Promise.all([
@@ -219,16 +213,16 @@ Promise.all([
  live.innerHTML=""; upcoming.innerHTML=""; completed.innerHTML="";
 
  exams.forEach(e=>{
-  const a=Number(e[2]), b=Number(e[3]), t=a+b*2;
+  const a=+e[2], b=+e[3], t=a+b*2;
   const attempts=results.filter(r=>r[0]===e[0]&&r[1]===user.roll);
   const last=attempts.length?attempts[attempts.length-1][4]:null;
   const now=new Date(), start=new Date(e[8]), end=new Date(e[9]);
 
-  if(last==="SUBMITTED"){completed.innerHTML+=completedCard(e,"Already submitted",a,b,t);return;}
+  if(last==="SUBMITTED"){completed.innerHTML+=completedCard(e,"COMPLETED",a,b,t);return;}
   if(last==="RE-ENABLED"){live.innerHTML+=liveCard(e,a,b,t);return;}
   if(!attempts.length&&now>=start&&now<=end){live.innerHTML+=liveCard(e,a,b,t);return;}
   if(now<start){upcoming.innerHTML+=upcomingCard(e,start,a,b,t);return;}
-  completed.innerHTML+=completedCard(e,"Exam window closed",a,b,t);
+  completed.innerHTML+=completedCard(e,"CLOSED",a,b,t);
  });
 
  if(!live.innerHTML)live.innerHTML='<div class="empty">No live exams</div>';
@@ -236,33 +230,50 @@ Promise.all([
  if(!completed.innerHTML)completed.innerHTML='<div class="empty">No completed exams</div>';
 });
 
-function meta(a,b,t){
- return `
- <div class="meta">
-  <div class="row"><i class="fa-solid fa-list-check"></i> Part A (1 Mark): ${a}</div>
-  <div class="row"><i class="fa-solid fa-layer-group"></i> Part B (2 Marks): ${b}</div>
-  <div class="row total"><i class="fa-solid fa-star"></i> Total Marks: ${t}</div>
- </div>`;
-}
-function liveCard(e,a,b,t){
- return `<div class="exam-card"><div class="ribbon live">LIVE</div>
- <div class="exam-info"><h4>${e[1]}</h4><p>Exam ID: ${e[0]}</p>${meta(a,b,t)}
- <button class="btn start" onclick="startExam('${e[0]}')">
- <i class="fa-solid fa-play"></i> Start Exam</button></div></div>`;
-}
-function upcomingCard(e,s,a,b,t){
- return `<div class="exam-card"><div class="ribbon upcoming">SCHEDULED</div>
- <div class="exam-info"><h4>${e[1]}</h4><p>Starts: ${s.toLocaleString()}</p>${meta(a,b,t)}</div></div>`;
-}
-function completedCard(e,msg,a,b,t){
- return `<div class="exam-card"><div class="ribbon completed">COMPLETED</div>
- <div class="exam-info"><h4>${e[1]}</h4><p>${msg}</p>${meta(a,b,t)}
- ${e[7]==="YES"&&msg==="Already submitted"
- ?`<button class="btn review" onclick="viewResult('${e[0]}')"><i class="fa-solid fa-chart-bar"></i> View Result</button>
-   <button class="btn review" onclick="reviewExam('${e[0]}')"><i class="fa-solid fa-file-lines"></i> Review Answers</button>`
- :`<div class="info">${msg}</div>`}
- </div></div>`;
-}
+const meta=(a,b,t)=>`
+<div class="meta">
+ <div class="row"><i class="fa-solid fa-list-check"></i> Part A (1 Mark): ${a}</div>
+ <div class="row"><i class="fa-solid fa-layer-group"></i> Part B (2 Marks): ${b}</div>
+ <div class="row total"><i class="fa-solid fa-star"></i> Total Marks: ${t}</div>
+</div>`;
+
+const liveCard=(e,a,b,t)=>`
+<div class="exam-card">
+ <div class="status-badge status-live">LIVE</div>
+ <div class="exam-info">
+  <h4>${e[1]}</h4>
+  <p>Exam ID: ${e[0]}</p>
+  ${meta(a,b,t)}
+  <button class="btn start" onclick="startExam('${e[0]}')">
+   <i class="fa-solid fa-play"></i> Start Exam
+  </button>
+ </div>
+</div>`;
+
+const upcomingCard=(e,s,a,b,t)=>`
+<div class="exam-card">
+ <div class="status-badge status-upcoming">SCHEDULED</div>
+ <div class="exam-info">
+  <h4>${e[1]}</h4>
+  <p>Starts: ${s.toLocaleString()}</p>
+  ${meta(a,b,t)}
+ </div>
+</div>`;
+
+const completedCard=(e,msg,a,b,t)=>`
+<div class="exam-card">
+ <div class="status-badge status-completed">${msg}</div>
+ <div class="exam-info">
+  <h4>${e[1]}</h4>
+  ${meta(a,b,t)}
+  <button class="btn review" onclick="viewResult('${e[0]}')">
+   <i class="fa-solid fa-chart-bar"></i> View Result
+  </button>
+  <button class="btn review" onclick="reviewExam('${e[0]}')">
+   <i class="fa-solid fa-file-lines"></i> Review Answers
+  </button>
+ </div>
+</div>`;
 
 function startExam(id){sessionStorage.setItem("exam_id",id);location.href="instructions.html";}
 function viewResult(id){sessionStorage.setItem("exam_id",id);location.href="result.html";}

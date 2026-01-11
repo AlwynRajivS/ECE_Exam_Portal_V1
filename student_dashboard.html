@@ -86,16 +86,45 @@ header{
 .upcoming{background:#ef6c00}
 .completed{background:#546e7a}
 
+/* LIVE ANIMATION */
+@keyframes pulseGlow{
+  0%{box-shadow:0 0 0 rgba(46,125,50,.4)}
+  50%{box-shadow:0 0 28px rgba(46,125,50,.7)}
+  100%{box-shadow:0 0 0 rgba(46,125,50,.4)}
+}
+.ribbon.live{animation:pulseGlow 2.5s infinite}
+
 .exam-info h4{margin:0;color:var(--blue)}
 .exam-info p{margin:6px 0;font-size:14px;color:#555}
+
+/* META INFO */
 .meta{
-  margin-top:10px;
-  padding:10px 16px;
-  border-radius:14px;
+  margin-top:12px;
+  padding:12px 16px;
+  border-radius:16px;
   background:#e3f2fd;
   font-weight:600;
+  width:100%;
+}
+.meta .row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:6px 0;
+  font-size:14px;
+  color:#0d47a1;
+}
+.meta .row i{color:#1976d2}
+.meta .total{
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px dashed #90caf9;
+  font-size:16px;
+  font-weight:800;
+  color:#2e7d32;
 }
 
+/* BUTTONS */
 .btn{
   padding:14px 30px;
   border:none;
@@ -127,6 +156,13 @@ header{
   border-radius:16px;
   color:#e65100;
 }
+
+/* MOBILE COMPACT */
+@media(max-width:600px){
+  .profile{flex-direction:column;text-align:center}
+  .btn{width:100%;justify-content:center}
+  .exam-card{padding:18px}
+}
 </style>
 </head>
 
@@ -141,37 +177,32 @@ header{
 
 <div class="profile" id="profile"></div>
 
-<!-- LIVE -->
 <div class="section">
-  <h3 class="section-title"><i class="fa-solid fa-bolt"></i> Live Exams</h3>
-  <div id="live" class="empty">No live exams</div>
+ <h3 class="section-title"><i class="fa-solid fa-bolt"></i> Live Exams</h3>
+ <div id="live" class="empty">No live exams</div>
 </div>
 
-<!-- UPCOMING -->
 <div class="section">
-  <h3 class="section-title"><i class="fa-solid fa-calendar"></i> Scheduled Exams</h3>
-  <div id="upcoming" class="empty">No scheduled exams</div>
+ <h3 class="section-title"><i class="fa-solid fa-calendar"></i> Scheduled Exams</h3>
+ <div id="upcoming" class="empty">No scheduled exams</div>
 </div>
 
-<!-- COMPLETED -->
 <div class="section">
-  <h3 class="section-title"><i class="fa-solid fa-check"></i> Completed Exams</h3>
-  <div id="completed" class="empty">No completed exams</div>
+ <h3 class="section-title"><i class="fa-solid fa-check"></i> Completed Exams</h3>
+ <div id="completed" class="empty">No completed exams</div>
 </div>
 
 <button class="btn logout" onclick="logout()">
-<i class="fa-solid fa-right-from-bracket"></i> Logout
+ <i class="fa-solid fa-right-from-bracket"></i> Logout
 </button>
 
 </div>
 
 <script>
-const WEBAPP_URL =
-"https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
+const WEBAPP_URL="https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
+const user=JSON.parse(sessionStorage.getItem("user"));
 
-const user = JSON.parse(sessionStorage.getItem("user"));
-
-profile.innerHTML = `
+profile.innerHTML=`
 <i class="fa-solid fa-circle-user"></i>
 <div>
 <h3>${user.name}</h3>
@@ -180,146 +211,63 @@ profile.innerHTML = `
 <p><b>Year / Section:</b> ${user.year} - ${user.section}</p>
 </div>`;
 
-/* LOAD EXAMS + RESULTS */
 Promise.all([
- fetch(WEBAPP_URL,{
-  method:"POST",
-  body:new URLSearchParams({action:"getStudentExams",roll:user.roll})
- }).then(r=>r.json()),
-
- fetch(WEBAPP_URL,{
-  method:"POST",
-  body:new URLSearchParams({action:"getResults"})
- }).then(r=>r.json())
+ fetch(WEBAPP_URL,{method:"POST",body:new URLSearchParams({action:"getStudentExams",roll:user.roll})}).then(r=>r.json()),
+ fetch(WEBAPP_URL,{method:"POST",body:new URLSearchParams({action:"getResults"})}).then(r=>r.json())
 ]).then(([exams,results])=>{
 
- live.innerHTML="";
- upcoming.innerHTML="";
- completed.innerHTML="";
+ live.innerHTML=""; upcoming.innerHTML=""; completed.innerHTML="";
 
  exams.forEach(e=>{
+  const a=Number(e[2]), b=Number(e[3]), t=a+b*2;
+  const attempts=results.filter(r=>r[0]===e[0]&&r[1]===user.roll);
+  const last=attempts.length?attempts[attempts.length-1][4]:null;
+  const now=new Date(), start=new Date(e[8]), end=new Date(e[9]);
 
-  const partA = Number(e[2]);
-  const partB = Number(e[3]);
-  const totalMarks = partA + partB*2;
-
-  const attempts = results.filter(
-    r => r[0]===e[0] && r[1]===user.roll
-  );
-
-  const attemptCount = attempts.length;
-  const lastStatus = attemptCount
-    ? attempts[attemptCount-1][4]
-    : null;
-
-  const now = new Date();
-  const start = new Date(e[8]);
-  const end   = new Date(e[9]);
-
-  /* ========= FINAL DECISION LOGIC ========= */
-
-  if (attemptCount > 0 && lastStatus === "SUBMITTED") {
-    completed.innerHTML += completedCard(e,"Already submitted",partA,partB,totalMarks);
-    return;
-  }
-
-  if (lastStatus === "RE-ENABLED") {
-    live.innerHTML += liveCard(e,partA,partB,totalMarks);
-    return;
-  }
-
-  if (attemptCount === 0 && now >= start && now <= end) {
-    live.innerHTML += liveCard(e,partA,partB,totalMarks);
-    return;
-  }
-
-  if (now < start) {
-    upcoming.innerHTML += upcomingCard(e,start,partA,partB,totalMarks);
-    return;
-  }
-
-  completed.innerHTML += completedCard(e,"Exam window closed",partA,partB,totalMarks);
+  if(last==="SUBMITTED"){completed.innerHTML+=completedCard(e,"Already submitted",a,b,t);return;}
+  if(last==="RE-ENABLED"){live.innerHTML+=liveCard(e,a,b,t);return;}
+  if(!attempts.length&&now>=start&&now<=end){live.innerHTML+=liveCard(e,a,b,t);return;}
+  if(now<start){upcoming.innerHTML+=upcomingCard(e,start,a,b,t);return;}
+  completed.innerHTML+=completedCard(e,"Exam window closed",a,b,t);
  });
 
- if(!live.innerHTML) live.innerHTML='<div class="empty">No live exams</div>';
- if(!upcoming.innerHTML) upcoming.innerHTML='<div class="empty">No scheduled exams</div>';
- if(!completed.innerHTML) completed.innerHTML='<div class="empty">No completed exams</div>';
+ if(!live.innerHTML)live.innerHTML='<div class="empty">No live exams</div>';
+ if(!upcoming.innerHTML)upcoming.innerHTML='<div class="empty">No scheduled exams</div>';
+ if(!completed.innerHTML)completed.innerHTML='<div class="empty">No completed exams</div>';
 });
 
-/* CARD TEMPLATES */
-function liveCard(e,a,b,t){
+function meta(a,b,t){
  return `
- <div class="exam-card">
- <div class="ribbon live">LIVE</div>
- <div class="exam-info">
- <h4>${e[1]}</h4>
- <p>Exam ID: ${e[0]}</p>
  <div class="meta">
-  <div>Part A Question (1 Mark): ${a}</div>
-  <div>Part B Question (2 Marks): ${b}</div>
-  <div>Total Marks: ${t}</div>
-</div>
-
- <button class="btn start" onclick="startExam('${e[0]}')">
- <i class="fa-solid fa-play"></i> Start Exam</button>
+  <div class="row"><i class="fa-solid fa-list-check"></i> Part A (1 Mark): ${a}</div>
+  <div class="row"><i class="fa-solid fa-layer-group"></i> Part B (2 Marks): ${b}</div>
+  <div class="row total"><i class="fa-solid fa-star"></i> Total Marks: ${t}</div>
  </div>`;
 }
-function upcomingCard(e,start,a,b,t){
- return `
- <div class="exam-card">
- <div class="ribbon upcoming">SCHEDULED</div>
- <div class="exam-info">
- <h4>${e[1]}</h4>
- <p>Starts: ${start.toLocaleString()}</p>
- <div class="meta">
-  <div>Part A Question (1 Mark): ${a}</div>
-  <div>Part B Question (2 Marks): ${b}</div>
-  <div>Total Marks: ${t}</div>
-</div>
-
+function liveCard(e,a,b,t){
+ return `<div class="exam-card"><div class="ribbon live">LIVE</div>
+ <div class="exam-info"><h4>${e[1]}</h4><p>Exam ID: ${e[0]}</p>${meta(a,b,t)}
+ <button class="btn start" onclick="startExam('${e[0]}')">
+ <i class="fa-solid fa-play"></i> Start Exam</button></div></div>`;
+}
+function upcomingCard(e,s,a,b,t){
+ return `<div class="exam-card"><div class="ribbon upcoming">SCHEDULED</div>
+ <div class="exam-info"><h4>${e[1]}</h4><p>Starts: ${s.toLocaleString()}</p>${meta(a,b,t)}</div></div>`;
 }
 function completedCard(e,msg,a,b,t){
- return `
- <div class="exam-card">
- <div class="ribbon completed">COMPLETED</div>
- <div class="exam-info">
- <h4>${e[1]}</h4>
- <p>${msg}</p>
- <div class="meta">
-  <div>Part A Question (1 Mark): ${a}</div>
-  <div>Part B Question (2 Marks): ${b}</div>
-  <div>Total Marks: ${t}</div>
-</div>
-
- ${
-  e[7]==="YES" && msg==="Already submitted"
-  ? `
-   <button class="btn review" onclick="viewResult('${e[0]}')">
-   <i class="fa-solid fa-chart-bar"></i> View Result</button>
-   <button class="btn review" onclick="reviewExam('${e[0]}')">
-   <i class="fa-solid fa-file-lines"></i> Review Answers</button>`
-  : `<div class="info">${msg}</div>`
- }
- </div>`;
+ return `<div class="exam-card"><div class="ribbon completed">COMPLETED</div>
+ <div class="exam-info"><h4>${e[1]}</h4><p>${msg}</p>${meta(a,b,t)}
+ ${e[7]==="YES"&&msg==="Already submitted"
+ ?`<button class="btn review" onclick="viewResult('${e[0]}')"><i class="fa-solid fa-chart-bar"></i> View Result</button>
+   <button class="btn review" onclick="reviewExam('${e[0]}')"><i class="fa-solid fa-file-lines"></i> Review Answers</button>`
+ :`<div class="info">${msg}</div>`}
+ </div></div>`;
 }
 
-/* NAVIGATION */
-function startExam(id){
- sessionStorage.setItem("exam_id",id);
- location.href="instructions.html";
-}
-function viewResult(id){
- sessionStorage.setItem("exam_id",id);
- location.href="result.html";
-}
-function reviewExam(id){
- sessionStorage.setItem("exam_id",id);
- location.href="review.html";
-}
-function logout(){
- sessionStorage.clear();
- location.href="index.html";
-}
+function startExam(id){sessionStorage.setItem("exam_id",id);location.href="instructions.html";}
+function viewResult(id){sessionStorage.setItem("exam_id",id);location.href="result.html";}
+function reviewExam(id){sessionStorage.setItem("exam_id",id);location.href="review.html";}
+function logout(){sessionStorage.clear();location.href="index.html";}
 </script>
 
 </body>

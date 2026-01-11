@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -80,7 +80,7 @@ const WEBAPP_URL =
 const exam_id = sessionStorage.getItem("exam_id");
 const user = JSON.parse(sessionStorage.getItem("user"));
 
-studentInfo.innerHTML = `
+document.getElementById("studentInfo").innerHTML = `
 👨‍🎓 ${user.name} | 🆔 ${user.roll} | 📝 Exam ID: ${exam_id}
 `;
 
@@ -101,20 +101,31 @@ Promise.all([
 ])
 .then(([questions, responses])=>{
 
+  const review = document.getElementById("review");
+
   if(!responses.length){
     review.innerHTML = `<p>No responses found.</p>`;
     return;
   }
 
-  const answers = JSON.parse(responses[0][2]); // answers_json
+  /* ===== READ RESPONSE DATA ===== */
+  const answers = JSON.parse(responses[0][2]);          // answers_json
+  const assignedQids = responses[0][3]                  // assigned_qids
+    .split(",")
+    .map(q=>q.trim());
 
-  questions.forEach((q, index)=>{
+  /* ===== FILTER ONLY ASSIGNED QUESTIONS ===== */
+  const filteredQuestions = questions.filter(q =>
+    assignedQids.includes(String(q[2]).trim())
+  );
 
-    const qid = q[2];
-    const studentKey = answers[qid] || "";   // A / B / C / D or ""
+  /* ===== RENDER REVIEW ===== */
+  filteredQuestions.forEach((q, index)=>{
+
+    const qid = String(q[2]).trim();
+    const studentKey = answers[qid] || "";
     const correctKey = q[8];
 
-    // 🔑 OPTION TEXT MAP
     const optionMap = {
       A: q[4],
       B: q[5],
@@ -152,10 +163,17 @@ Promise.all([
       </div>
 
       <span class="badge ${isCorrect?'correct':'wrong'}">
-        ${studentKey ? (isCorrect ? "Correct" : "Wrong") : "Not Answered"}
+        ${studentKey
+          ? (isCorrect ? "Correct" : "Wrong")
+          : "Not Answered"}
       </span>
     </div>`;
   });
+})
+.catch(err=>{
+  document.getElementById("review").innerHTML =
+    `<p>Error loading review.</p>`;
+  console.error(err);
 });
 </script>
 

@@ -260,32 +260,29 @@ const upcomingCard=(e,s,a,b,t)=>`
  </div>
 </div>`;
 
-function completedCard(e, msg, a, b, t){
+function completedCard(e,msg,a,b,t){
  return `
  <div class="exam-card">
-  <div class="status-badge status-completed">COMPLETED</div>
-
+  <div class="ribbon completed">COMPLETED</div>
   <div class="exam-info">
    <h4>${e[1]}</h4>
    <p>${msg}</p>
-
-   ${meta(a,b,t)}
-
-    ${
-  e[7]==="YES" && msg==="Already submitted"
-  ?  `
-       <button class="btn review" onclick="viewResult('${e[0]}')">
-        <i class="fa-solid fa-chart-bar"></i> View Result
-       </button>
-
-       <button class="btn review" onclick="reviewExam('${e[0]}')">
-        <i class="fa-solid fa-file-lines"></i> Review Answers
-       </button>
-       `
-     : `<div class="info">${msg}</div>`
-   }
-
+   <div class="meta">Part A: ${a} | Part B: ${b} | Total: ${t}</div>
   </div>
+
+  ${
+    e[7] === "YES"
+    ? `
+      <button class="btn review" onclick="viewResult('${e[0]}')">
+        <i class="fa-solid fa-chart-bar"></i> View Result
+      </button>
+      <button class="btn review" onclick="reviewExam('${e[0]}')">
+        <i class="fa-solid fa-file-lines"></i> Review Answers
+      </button>
+    `
+    : `<div class="info">Review not enabled for this exam</div>`
+  }
+
  </div>`;
 }
 

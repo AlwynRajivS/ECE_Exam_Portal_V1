@@ -257,11 +257,12 @@ th{
 <h3>Exam Report (Print / Export)</h3>
 
 <div class="grid">
-  <input id="rep_exam_id" placeholder="Exam ID">
-  <input id="rep_exam_name" placeholder="Exam Name">
-  <input id="rep_dept" placeholder="Department">
-  <input id="rep_year" placeholder="Year">
-  <input id="rep_section" placeholder="Section">
+  <select id="rep_exam_id"></select>
+<select id="rep_exam_name"></select>
+<select id="rep_dept"></select>
+<select id="rep_year"></select>
+<select id="rep_section"></select>
+
 </div>
 
 <button class="btn primary" onclick="generateReport()">Generate Report</button>
@@ -371,25 +372,97 @@ function loadExams(){
       <td>${ex[10]}</td>
       <td>${ex[8]}</td>
       <td>${ex[9]}</td>
-      <td><button class="btn primary" onclick='editExam(${JSON.stringify(ex)})'>Edit</button></td>
+     <td>
+  <button class="btn primary" onclick='editExam(${JSON.stringify(ex).replace(/"/g,"&quot;")})'>
+    Edit
+  </button>
+</td>
+
     </tr>`;
   });
  });
 }
 
-function editExam(ex){
- exam_id.value=ex[0];
- exam_name.value=ex[1];
- partA_count.value=ex[2];
- partB_count.value=ex[3];
- duration_min.value=ex[4];
- violation_limit.value=ex[5];
- calculator.value=ex[6];
- review.value=ex[7];
- start_datetime.value=ex[8];
- end_datetime.value=ex[9];
- exam_status.value=ex[10];
+  let EXAMS_CACHE = [];
+let USERS_CACHE = [];
+
+/* ===== LOAD DROPDOWNS FROM BACKEND ===== */
+function loadReportDropdowns(){
+
+  /* ===== EXAMS ===== */
+  fetch(WEBAPP_URL,{method:"POST",
+    body:new URLSearchParams({action:"getAllExams"})
+  })
+  .then(r=>r.json())
+  .then(exams=>{
+    EXAMS_CACHE = exams;
+
+    rep_exam_id.innerHTML = `<option value="">Select Exam ID</option>`;
+    rep_exam_name.innerHTML = `<option value="">Select Exam Name</option>`;
+
+    exams.forEach(ex=>{
+      rep_exam_id.innerHTML += `<option value="${ex[0]}">${ex[0]}</option>`;
+      rep_exam_name.innerHTML += `<option value="${ex[1]}">${ex[1]}</option>`;
+    });
+
+    /* 🔁 Sync Exam Name */
+    rep_exam_id.onchange = ()=>{
+      const e = EXAMS_CACHE.find(x=>x[0]===rep_exam_id.value);
+      if(e) rep_exam_name.value = e[1];
+    };
+  });
+
+  /* ===== USERS (Dept / Year / Section) ===== */
+  fetch(WEBAPP_URL,{method:"POST",
+    body:new URLSearchParams({action:"getAllUsers"})
+  })
+  .then(r=>r.json())
+  .then(users=>{
+    USERS_CACHE = users;
+
+    const deptSet = new Set();
+    const yearSet = new Set();
+    const secSet  = new Set();
+
+    users.forEach(u=>{
+      if(u[5]) deptSet.add(u[5]);
+      if(u[6]) yearSet.add(u[6]);
+      if(u[7]) secSet.add(u[7]);
+    });
+
+    rep_dept.innerHTML = `<option value="">ALL Departments</option>`;
+    [...deptSet].sort().forEach(d=>{
+      rep_dept.innerHTML += `<option value="${d}">${d}</option>`;
+    });
+
+    rep_year.innerHTML = `<option value="">ALL Years</option>`;
+    [...yearSet].sort().forEach(y=>{
+      rep_year.innerHTML += `<option value="${y}">${y}</option>`;
+    });
+
+    rep_section.innerHTML = `<option value="">ALL Sections</option>`;
+    [...secSet].sort().forEach(s=>{
+      rep_section.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+  });
 }
+
+function editExam(ex){
+  exam_id.value = ex[0];
+  exam_id.readOnly = false;   // 🔒 lock ID
+
+  exam_name.value = ex[1];
+  partA_count.value = ex[2];
+  partB_count.value = ex[3];
+  duration_min.value = ex[4];
+  violation_limit.value = ex[5];
+  calculator.value = ex[6];
+  review.value = ex[7];
+  start_datetime.value = ex[8];
+  end_datetime.value = ex[9];
+  exam_status.value = ex[10];
+}
+
 
 /* ================= QUESTIONS ================= */
 function addSingleQuestion(){
@@ -573,19 +646,35 @@ function generateReport(){
       let sno=1;
 
       results.forEach(r=>{
-        const roll=r[1], marks=r[2], v=r[3];
+  const roll  = r[1];
+  const marks = r[2];
+  const vio   = r[3];
 
-        REPORT_DATA.push([sno, roll, "", marks, v]);
+  const user = USERS_CACHE.find(u=>u[3]===roll);
+  if(!user) return;
 
-        tbody.innerHTML+=`
-        <tr>
-          <td>${sno++}</td>
-          <td>${roll}</td>
-          <td>-</td>
-          <td>${marks}</td>
-          <td>${v}</td>
-        </tr>`;
-      });
+  if(rep_dept.value && user[5]!==rep_dept.value) return;
+  if(rep_year.value && user[6]!==rep_year.value) return;
+  if(rep_section.value && user[7]!==rep_section.value) return;
+
+  REPORT_DATA.push([
+    sno,
+    roll,
+    user[4],   // student name
+    marks,
+    vio
+  ]);
+
+  tbody.innerHTML += `
+    <tr>
+      <td>${sno++}</td>
+      <td>${roll}</td>
+      <td>${user[4]}</td>
+      <td>${marks}</td>
+      <td>${vio}</td>
+    </tr>`;
+});
+
     });
   });
 }
@@ -649,6 +738,7 @@ loadExams();
 
 </body>
 </html>
+
 
 
 

@@ -568,19 +568,37 @@ function loadExams(){
 }
 
 /* ===== USERS ===== */
-fetch(WEBAPP_URL,{method:"POST",body:new URLSearchParams({action:"getAllUsers"})})
-.then(r=>r.json()).then(d=>{
- USERS=d;
- const D=new Set(),Y=new Set(),S=new Set();
- d.forEach(u=>{
-   if(u[4])D.add(u[4]);
-   if(u[5])Y.add(u[5]);
-   if(u[6])S.add(u[6]);
- });
- rep_dept.innerHTML='<option value="">All Depts</option>'+[...D].map(v=>`<option>${v}</option>`).join("");
- rep_year.innerHTML='<option value="">All Years</option>'+[...Y].map(v=>`<option>${v}</option>`).join("");
- rep_section.innerHTML='<option value="">All Sections</option>'+[...S].map(v=>`<option>${v}</option>`).join("");
+fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({action:"getAllUsers"})
+})
+.then(r=>r.json())
+.then(d=>{
+  USERS = d;
+
+  const DEPTS = new Set();
+  const YEARS = new Set();
+  const SECTIONS = new Set();
+
+  d.forEach(u=>{
+    if(u[5]) DEPTS.add(u[5]);     // ✅ dept
+    if(u[6]) YEARS.add(u[6]);     // ✅ year
+    if(u[7]) SECTIONS.add(u[7]);  // ✅ section
+  });
+
+  rep_dept.innerHTML =
+    '<option value="">All Depts</option>' +
+    [...DEPTS].map(v=>`<option>${v}</option>`).join("");
+
+  rep_year.innerHTML =
+    '<option value="">All Years</option>' +
+    [...YEARS].map(v=>`<option>${v}</option>`).join("");
+
+  rep_section.innerHTML =
+    '<option value="">All Sections</option>' +
+    [...SECTIONS].map(v=>`<option>${v}</option>`).join("");
 });
+
 
 /* ===== REPORT ===== */
 rep_exam_id.onchange=()=>{
@@ -741,6 +759,7 @@ loadExams();
 
 </body>
 </html>
+
 
 
 

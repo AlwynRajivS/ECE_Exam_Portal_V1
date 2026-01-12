@@ -108,8 +108,8 @@ if (!examId) {
     }
 
     document.getElementById("examId").innerText = examId;
-    document.getElementById("examName").innerText =
-      examTitle || "Online Examination";
+    document.getElementById("examName").innerText = data.exam_name;
+
 
     document.getElementById("partA").innerText = data.partA;
     document.getElementById("partB").innerText = data.partB;

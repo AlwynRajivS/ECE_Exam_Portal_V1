@@ -255,6 +255,7 @@ const upcomingCard=(e,s,a,b,t)=>`
  <div class="status-badge status-upcoming">SCHEDULED</div>
  <div class="exam-info">
   <h4>${e[1]}</h4>
+  <p>Exam ID: ${e[0]}</p>
   <p>Starts: ${s.toLocaleString()}</p>
   ${meta(a,b,t)}
  </div>
@@ -267,6 +268,7 @@ function completedCard(e,msg,a,b,t){
 
   <div class="exam-info">
    <h4>${e[1]}</h4>
+  <p>Exam ID: ${e[0]}</p>
    <p>${msg}</p>
    ${meta(a,b,t)}
   </div>

@@ -349,6 +349,8 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
 let timerStarted = false;
 
  let examLoaded = false;
+let isSubmitting = false;
+
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxmFdZlBq4m_7SvJtVF9NbyGC-c_of2aqokQtyg81aH97WPo6AT56VvwKYGG_tz4XEq/exec";
 
 
@@ -389,6 +391,11 @@ function violate(type,auto=false){
  submitExam();
 }
 
+
+if (violations >= limit && questions.length > 0) {
+ submitExam();
+}
+
 }
 
 /* ================= STRICT PROCTOR EVENTS ================= */
@@ -421,11 +428,16 @@ window.addEventListener("blur",()=>{
 });
 
 /* ❌ Reload / refresh */
-window.addEventListener("beforeunload",()=>{
+window.addEventListener("beforeunload", (e)=>{
+  if(isSubmitting) return; // ✅ allow submit redirect
+
   if(questions.length > 0){
     violate("Page Reload / Refresh");
+    e.preventDefault();
+    e.returnValue = ""; // block accidental close
   }
 });
+
 
 
 /* EXAM META */
@@ -622,6 +634,8 @@ function confirmSubmit(){modal.style.display="flex"}
 function closeModal(){modal.style.display="none"}
 
 function submitExam(){
+  isSubmitting = true;   // ✅ critical
+
  const finalAnswers={};
 questions.forEach((q, i) => {
   finalAnswers[String(q[2]).trim()] =

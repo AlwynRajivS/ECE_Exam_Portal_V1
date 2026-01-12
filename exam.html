@@ -260,11 +260,12 @@ function violate(type,auto=false){
 /* ================= STRICT PROCTOR EVENTS ================= */
 
 /* ❌ Exit fullscreen */
-document.addEventListener("fullscreenchange",()=>{
- if(!document.fullscreenElement){
-  violate("Exit Fullscreen");
- }
+document.addEventListener("fullscreenchange", () => {
+  if(!document.fullscreenElement){
+    forceAutoSubmit("Exited Fullscreen");
+  }
 });
+
 
 /* ❌ Notification / call / lock / background */
 document.addEventListener("visibilitychange",()=>{
@@ -274,8 +275,18 @@ document.addEventListener("visibilitychange",()=>{
 });
 
 /* ❌ Control center / quick app switch */
-window.addEventListener("blur",()=>{
- violate("App Switch / Control Center Swipe");
+let blurTimer = null;
+
+window.addEventListener("blur", () => {
+  blurTimer = setTimeout(() => {
+    forceAutoSubmit("App Switch / Background");
+  }, 300);
+});
+ window.addEventListener("focus", () => {
+  if(blurTimer){
+    clearTimeout(blurTimer);
+    blurTimer = null;
+  }
 });
 
 /* ❌ Copy / cut / right click */
@@ -293,6 +304,12 @@ window.addEventListener("beforeunload",()=>{
   }
 });
 
+// 🔒 TRAP BACK BUTTON — AUTO SUBMIT
+history.pushState(null, null, location.href);
+
+window.addEventListener("popstate", () => {
+  forceAutoSubmit("Browser Back Button");
+});
 
 /* EXAM META */
 /* ================= EXAM META → QUESTIONS (FIXED) ================= */
@@ -479,6 +496,8 @@ function submitExam(){
 questions.forEach((q, i) => {
   finalAnswers[String(q[2]).trim()] =
     answers[i]?.ans || "";
+    sessionStorage.setItem("exam_submitted","YES");
+
 });
 
 
@@ -492,8 +511,10 @@ questions.forEach((q, i) => {
    total_violations:violations,
    //status:"SUBMITTED"
   })
- }).then(()=>location.href="summary.html");
-}
+ }).then(()=>{
+  location.replace("summary.html");
+});
+  //.then(()=>location.href="summary.html");}
 
 function saveState(){
  sessionStorage.setItem("answers", JSON.stringify(answers));

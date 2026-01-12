@@ -98,8 +98,8 @@ ul{
 
   <ul>
     <li>The examination is <b>strictly time bound</b>.</li>
-    <li>The exam must be taken in <b>full-screen mode</b>.</li>
-    <li><b>Tab switching, copy, notifications, screen exit</b> are recorded as violations.</li>
+    <li>The exam must be attended in <b>full-screen mode</b>.</li>
+    <li><b>Tab switching, copy, notifications, screen exit</b> are recorded.</li>
     <li>Exceeding maximum violations leads to <b>auto submission</b>.</li>
     <li>Questions appear <b>one at a time</b>.</li>
     <li>You may <b>mark questions for review</b>.</li>
@@ -124,14 +124,18 @@ Online Examination System
 
 <script>
 /* ================= CONFIG ================= */
-const API_URL = "https://script.google.com/macros/s/AKfycbxGNJoXPSsoCQfQQPawIdwF_eFOwWIfOdqZDITYDBoJKxNt2ghO-d5vQrV3-VXiKOq6/exec";
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbxGNJoXPSsoCQfQQPawIdwF_eFOwWIfOdqZDITYDBoJKxNt2ghO-d5vQrV3-VXiKOq6/exec";
 
 /* ================= LOGIC ================= */
-const examId = new URLSearchParams(window.location.search).get("exam_id");
+const params = new URLSearchParams(window.location.search);
+const examId = params.get("exam_id");
+
 console.log("Exam ID from URL:", examId);
 
 if (!examId) {
-  document.getElementById("loading").innerText = "Invalid Exam ID";
+  document.getElementById("loading").innerText =
+    "Invalid Exam ID (exam_id missing in URL)";
 } else {
 
   fetch(API_URL, {
@@ -158,15 +162,19 @@ if (!examId) {
     document.getElementById("partB").innerText = data.partB;
     document.getElementById("maxViolation").innerText = data.violation_limit;
 
-    // Total marks logic (Part A = 1 mark, Part B = 2 marks)
-    const totalMarks = Number(data.partA) * 1 + Number(data.partB) * 2;
+    // Part A = 1 mark, Part B = 2 marks
+    const totalMarks =
+      Number(data.partA) * 1 + Number(data.partB) * 2;
+
     document.getElementById("totalMarks").innerText = totalMarks;
 
     document.getElementById("loading").style.display = "none";
     document.getElementById("examDetails").style.display = "block";
   })
-  .catch(() => {
-    document.getElementById("loading").innerText = "Failed to load exam data";
+  .catch(err => {
+    console.error(err);
+    document.getElementById("loading").innerText =
+      "Failed to load exam data";
   });
 }
 

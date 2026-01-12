@@ -252,47 +252,15 @@ th{
   </table>
 </div>
 
-<!-- ================= REPORT GENERATION (ADDED) ================= -->
-<div class="card report-area">
-<h3>Exam Report (Print / Export)</h3>
 
-<div class="grid">
-  <select id="rep_exam_id"></select>
-  <input id="rep_exam_name" placeholder="Exam Name" readonly>
-  <select id="rep_dept"></select>
-  <select id="rep_year"></select>
-  <select id="rep_section"></select>
-</div>
-
-<button class="btn primary" onclick="generateReport()">Generate Report</button>
-<button class="btn success" onclick="downloadExcel()">Download Excel</button>
-<button class="btn secondary" onclick="downloadPDF()">Download PDF</button>
-
-<div class="table-scroll">
-<table id="reportTable">
-<thead>
-<tr>
-  <th>S.No</th>
-  <th>Roll No</th>
-  <th>Student Name</th>
-  <th>Total Marks</th>
-  <th>Violations</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-</div>
 
 <!-- ================= LOGOUT ================= -->
 <button class="btn danger" onclick="logout()">Logout</button>
 
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
 <script>
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbys44zaFPH4ZbY3OU50sLJpEsElH27JFWRdWZ1baoz62WdW-WpSTxqQ2IZZIt0nUbzh/exec";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyv4rYwt1P_579hiz9px5jIphcAye7H1r83aDtmK-8VOwH9LuVSniU8TbRIZKWgxs5e/exec";
 
 /* ================= CREATE EXAM ================= */
 function createExam(){
@@ -441,7 +409,6 @@ function uploadMapping(){
  });
 }
 
-
 /* ================= CSV ================= */
 function parseCSV(file,cb){
  if(!file){alert("Select CSV");return;}
@@ -545,112 +512,6 @@ function reenable(exam_id, roll_no){
  }).then(()=>{ alert("Student Re-Enabled"); loadResults(); });
 }
 
-  let EXAMS=[], USERS=[], REPORT_DATA=[];
-
-/* ===== LOAD REPORT DROPDOWNS ===== */
-function loadReportData(){
-
-  fetch(WEBAPP_URL,{method:"POST",
-    body:new URLSearchParams({action:"getAllExams"})
-  }).then(r=>r.json()).then(d=>{
-    EXAMS=d;
-    rep_exam_id.innerHTML='<option value="">Select Exam ID</option>';
-    d.forEach(e=>rep_exam_id.innerHTML+=`<option>${e[0]}</option>`);
-    rep_exam_id.onchange=()=>{
-      const ex=EXAMS.find(x=>x[0]===rep_exam_id.value);
-      rep_exam_name.value=ex?ex[1]:"";
-    };
-  });
-
-  fetch(WEBAPP_URL,{method:"POST",
-    body:new URLSearchParams({action:"getAllUsers"})
-  }).then(r=>r.json()).then(d=>{
-    USERS=d;
-    const D=new Set(),Y=new Set(),S=new Set();
-    d.forEach(u=>{
-      if(u[5])D.add(u[5]);
-      if(u[6])Y.add(u[6]);
-      if(u[7])S.add(u[7]);
-    });
-    rep_dept.innerHTML='<option value="">ALL DEPTS</option>'+[...D].sort().map(v=>`<option>${v}</option>`).join("");
-    rep_year.innerHTML='<option value="">ALL YEARS</option>'+[...Y].sort().map(v=>`<option>${v}</option>`).join("");
-    rep_section.innerHTML='<option value="">ALL SECTIONS</option>'+[...S].sort().map(v=>`<option>${v}</option>`).join("");
-  });
-}
-
-/* ===== GENERATE REPORT ===== */
-function generateReport(){
- if(!rep_exam_id.value){alert("Select Exam ID");return;}
-
- fetch(WEBAPP_URL+"?action=getResults&exam_id="+rep_exam_id.value,{method:"POST"})
- .then(r=>r.json()).then(res=>{
-   REPORT_DATA=[];
-   const tb=document.querySelector("#reportTable tbody");
-   tb.innerHTML="";
-   let i=1;
-
-   res.forEach(r=>{
-     const u=USERS.find(x=>x[3]===r[1]);
-     if(!u)return;
-     if(rep_dept.value && u[5]!==rep_dept.value)return;
-     if(rep_year.value && u[6]!==rep_year.value)return;
-     if(rep_section.value && u[7]!==rep_section.value)return;
-
-     REPORT_DATA.push([i,r[1],u[4],r[2],r[3]]);
-     tb.innerHTML+=`
-     <tr>
-       <td>${i++}</td>
-       <td>${r[1]}</td>
-       <td>${u[4]}</td>
-       <td>${r[2]}</td>
-       <td>${r[3]}</td>
-     </tr>`;
-   });
- });
-}
-
-/* ===== EXCEL ===== */
-function downloadExcel(){
- if(!REPORT_DATA.length){alert("Generate report first");return;}
- const ws=XLSX.utils.aoa_to_sheet([
-  ["COLLEGE NAME"],[],
-  ["Exam ID: "+rep_exam_id.value],
-  ["Exam Name: "+rep_exam_name.value],
-  [`Dept: ${rep_dept.value}  Year: ${rep_year.value}  Section: ${rep_section.value}`],[],
-  ["S.No","Roll No","Student Name","Total Marks","Violations"],
-  ...REPORT_DATA
- ]);
- ws["!cols"]=[{wch:6},{wch:14},{wch:25},{wch:14},{wch:12}];
- const wb=XLSX.utils.book_new();
- XLSX.utils.book_append_sheet(wb,ws,"Report");
- XLSX.writeFile(wb,"Exam_Report.xlsx");
-}
-
-/* ===== PDF ===== */
-function downloadPDF(){
- if(!REPORT_DATA.length){alert("Generate report first");return;}
- const {jsPDF}=window.jspdf;
- const doc=new jsPDF();
- doc.setFont("Times","Normal");
- doc.setFontSize(14);
- doc.text("COLLEGE NAME",105,15,{align:"center"});
- doc.setFontSize(11);
- doc.text("Exam ID: "+rep_exam_id.value,14,25);
- doc.text("Exam Name: "+rep_exam_name.value,14,32);
- doc.text(`Dept: ${rep_dept.value}   Year: ${rep_year.value}   Section: ${rep_section.value}`,14,39);
- doc.autoTable({
-   startY:45,
-   head:[["S.No","Roll No","Student Name","Total Marks","Violations"]],
-   body:REPORT_DATA,
-   theme:"grid",
-   styles:{font:"Times",fontSize:10,halign:"center"},
-   headStyles:{fillColor:[21,101,192],font:"Times"}
- });
- doc.save("Exam_Report.pdf");
-}
-
-/* ===== INIT ===== */
-loadReportData();
 /* ================= LOGOUT ================= */
 function logout(){
  sessionStorage.clear();
@@ -662,3 +523,4 @@ loadExams();
 
 </body>
 </html>
+

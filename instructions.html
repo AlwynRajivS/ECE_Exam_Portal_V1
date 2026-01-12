@@ -125,11 +125,10 @@ Online Examination System
 <script>
 /* ================= CONFIG ================= */
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbxGNJoXPSsoCQfQQPawIdwF_eFOwWIfOdqZDITYDBoJKxNt2ghO-d5vQrV3-VXiKOq6/exec";
+"https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec";
 
 /* ================= LOGIC ================= */
-const params = new URLSearchParams(window.location.search);
-const examId = params.get("exam_id");
+const examId = new URLSearchParams(window.location.search).get("exam_id");
 
 console.log("Exam ID from URL:", examId);
 
@@ -163,16 +162,13 @@ if (!examId) {
     document.getElementById("maxViolation").innerText = data.violation_limit;
 
     // Part A = 1 mark, Part B = 2 marks
-    const totalMarks =
-      Number(data.partA) * 1 + Number(data.partB) * 2;
-
-    document.getElementById("totalMarks").innerText = totalMarks;
+    document.getElementById("totalMarks").innerText =
+      Number(data.partA) + Number(data.partB) * 2;
 
     document.getElementById("loading").style.display = "none";
     document.getElementById("examDetails").style.display = "block";
   })
-  .catch(err => {
-    console.error(err);
+  .catch(() => {
     document.getElementById("loading").innerText =
       "Failed to load exam data";
   });

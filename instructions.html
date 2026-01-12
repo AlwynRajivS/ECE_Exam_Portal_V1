@@ -36,6 +36,63 @@ ul{line-height:1.8;color:#333}
 }
 .loading{text-align:center;color:#999}
 .footer{text-align:center;color:#666;font-size:13px;margin-top:20px}
+
+.overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.confirmBox{
+  background: #2b1a15;
+  color: #f6e8e1;
+  width: 90%;
+  max-width: 360px;
+  padding: 22px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.confirmBox h3{
+  margin: 0 0 10px;
+}
+
+.confirmBox p{
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.actions{
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.actions button{
+  flex: 1;
+  margin: 0 6px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.actions .cancel{
+  background: #555;
+  color: #fff;
+}
+
+.actions .ok{
+  background: #1e88e5;
+  color: #fff;
+}
+
 </style>
 </head>
 
@@ -70,8 +127,21 @@ ul{line-height:1.8;color:#333}
     ⚠️ Once started, the exam cannot be paused or restarted.
   </div>
 
-  <button class="btn" onclick="proceedExam()">Proceed to Exam</button>
+ <div id="confirmOverlay" class="overlay">
+  <div class="confirmBox">
+    <h3>⚠ Exam Confirmation</h3>
+    <p>
+      The exam will start in <b>full screen mode</b>.<br>
+      Once started, it <b>cannot be paused or restarted</b>.
+    </p>
+
+    <div class="actions">
+      <button class="cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="ok" onclick="proceedExam()">OK</button>
+    </div>
+  </div>
 </div>
+
 
 <div class="footer">Online Examination System</div>
 </div>
@@ -126,12 +196,25 @@ if (!examId) {
   });
 }
 
-function proceedExam(){
-  if(confirm("The exam will start in full screen mode. Continue?")){
-    document.documentElement.requestFullscreen();
-    location.href="exam.html";
-  }
+
+function openConfirm(){
+  document.getElementById("confirmOverlay").style.display = "flex";
 }
+
+function closeConfirm(){
+  document.getElementById("confirmOverlay").style.display = "none";
+}
+
+function startExam(){
+  closeConfirm();
+
+  if (document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen();
+  }
+
+  location.href = "exam.html";
+}
+
 </script>
 
 </body>

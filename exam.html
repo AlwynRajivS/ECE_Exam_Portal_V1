@@ -9,7 +9,6 @@
  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-/* ================= EXISTING CSS (UNCHANGED) ================= */
 :root{
  --blue:#0d47a1; --green:#2e7d32;
  --orange:#fb8c00; --red:#c62828;
@@ -17,37 +16,135 @@
 }
 *{box-sizing:border-box;font-family:'Segoe UI',system-ui}
 body{margin:0;background:var(--bg)}
+
 header{
  position:sticky;top:0;z-index:50;
  background:linear-gradient(135deg,#0d47a1,#1976d2);
  color:#fff;padding:14px 18px;
  display:flex;justify-content:space-between;
- align-items:center;
- box-shadow:0 6px 20px rgba(0,0,0,.35)
+ align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.35)
 }
 header .grp{display:flex;gap:14px;align-items:flex-start}
+
 .progress{height:6px;background:#bbdefb}
 .progress span{display:block;height:100%;background:#2e7d32;width:0%;transition:.3s}
+
 .main{display:flex;min-height:90vh}
 .qbox{flex:1;background:#fff;padding:28px}
-.palette{width:260px;background:#f7f9fc;padding:18px;border-left:1px solid #ddd}
-.section{background:#e3f2fd;color:#0d47a1;padding:6px 14px;border-radius:16px;font-weight:600}
-.option{background:#e3f2fd;padding:14px 16px;border-radius:14px;margin:12px 0;cursor:pointer}
-.option.selected{background:linear-gradient(135deg,#2e7d32,#66bb6a);color:#fff}
-.palette span{width:36px;height:36px;display:inline-block;margin:6px;border-radius:50%;text-align:center;line-height:36px;color:#fff;background:#b0bec5;font-weight:600}
+.palette{
+ width:260px;background:#f7f9fc;
+ padding:18px;border-left:1px solid #ddd
+}
+
+.section{
+ background:#e3f2fd;color:#0d47a1;
+ padding:6px 14px;border-radius:16px;
+ font-weight:600;display:inline-block
+}
+.qimg{
+ max-width:100%;margin:14px auto;
+ border-radius:14px;
+ box-shadow:0 6px 18px rgba(0,0,0,.25)
+}
+.option{
+ background:#e3f2fd;padding:14px 16px;
+ border-radius:14px;margin:12px 0;
+ cursor:pointer;transition:.2s;
+ display:flex;gap:10px;align-items:center
+}
+.option:hover{background:#bbdefb}
+.option.selected{
+ background:linear-gradient(135deg,#2e7d32,#66bb6a);
+ color:#fff
+}
+
+.controls{margin-top:26px}
+.btn{
+ padding:12px 20px;border:none;
+ border-radius:14px;color:#fff;
+ cursor:pointer;font-size:14px;
+ display:inline-flex;align-items:center;gap:8px
+}
+.next{background:#1976d2}
+.mark{background:#fb8c00}
+.submit{background:#c62828}
+.submit:disabled{background:#b0bec5}
+
+.palette span{
+ width:36px;height:36px;
+ display:inline-block;margin:6px;
+ border-radius:50%;text-align:center;
+ line-height:36px;color:#fff;
+ background:#b0bec5;font-weight:600;
+ cursor:pointer
+}
 .answered{background:#2e7d32!important}
 .review{background:#fb8c00!important}
+
+.legend span{margin-right:10px;font-size:13px}
+.legend i{margin-right:4px}
+
+.modal{
+ position:fixed;inset:0;
+ background:rgba(0,0,0,.6);
+ display:none;align-items:center;
+ justify-content:center;z-index:100
+}
+.modal-box{
+ background:#fff;border-radius:18px;
+ padding:24px;max-width:360px;
+ width:90%;text-align:center
+}
+
+.calculator{
+ position:fixed;right:20px;bottom:20px;
+ width:300px;background:#263238;
+ color:#fff;border-radius:18px;
+ padding:16px;display:none;
+ box-shadow:0 18px 40px rgba(0,0,0,.5);
+ z-index:200
+}
+.calc-screen{
+ width:100%;height:44px;
+ background:#000;color:#0f0;
+ font-size:18px;border:none;
+ margin-bottom:10px;
+ padding:6px;text-align:right
+}
+.calc-btn{
+ width:22%;margin:1%;
+ padding:10px;background:#37474f;
+ color:#fff;border:none;
+ border-radius:10px;cursor:pointer
+}
+
+/* 🔒 PROCTOR OVERLAY */
+#proctorOverlay{
+ position:fixed;inset:0;
+ background:rgba(198,40,40,.95); /* 🔴 RED */
+ color:#fff;
+ display:none;
+ z-index:1000;
+ align-items:center;
+ justify-content:center;
+ text-align:center;
+}
+
+#proctorOverlay h2{
+ font-size:26px;
+ margin-bottom:10px;
+}
+
+#proctorOverlay.active{display:flex}
+
+@media(max-width:900px){
+ .main{flex-direction:column}
+ .palette{width:100%;border-left:none;border-top:1px solid #ddd}
+}
 </style>
 </head>
 
 <body>
-
-<script>
-/* 🔒 HARD BLOCK RE-ENTRY */
-if(sessionStorage.getItem("exam_submitted")==="YES"){
-  location.replace("summary.html");
-}
-</script>
 
 <header>
  <div class="grp">
@@ -57,6 +154,11 @@ if(sessionStorage.getItem("exam_submitted")==="YES"){
  <div class="grp">
   <div>⏱ <span id="timer">00:00</span></div>
   <div>⚠ <span id="vio">0 / 0</span></div>
+  <button id="calcBtn" class="btn"
+   style="display:none;background:#455a64"
+   onclick="toggleCalc()">
+   <i class="fa-solid fa-calculator"></i>
+  </button>
  </div>
 </header>
 
@@ -64,143 +166,370 @@ if(sessionStorage.getItem("exam_submitted")==="YES"){
 
 <div class="main">
  <div class="qbox">
-  <div id="loading" style="text-align:center;padding:40px;color:#78909c">
-   ⏳ Loading questions… Please wait
-  </div>
+ <div id="loading" style="
+ font-size:18px;
+ color:#78909c;
+ text-align:center;
+ padding:40px 0;">
+ ⏳ Loading questions… Please wait
+</div>
+
   <div id="question"></div>
+
+  <div class="controls">
+   <button class="btn mark" onclick="markReview()">
+    <i class="fa-solid fa-bookmark"></i> Review
+   </button>
+   <button class="btn next" onclick="nextQ()">
+    <i class="fa-solid fa-arrow-right"></i> Next
+   </button>
+   <button id="submitBtn" class="btn submit"
+    onclick="confirmSubmit()" disabled>
+    <i class="fa-solid fa-paper-plane"></i> Submit
+   </button>
+  </div>
+
+  <div class="legend" style="margin-top:20px">
+   <span><i class="fa-solid fa-circle" style="color:#b0bec5"></i> Unanswered</span>
+   <span><i class="fa-solid fa-circle" style="color:#2e7d32"></i> Answered</span>
+   <span><i class="fa-solid fa-circle" style="color:#fb8c00"></i> Review</span>
+  </div>
  </div>
+
  <div class="palette" id="palette"></div>
 </div>
 
+<div class="modal" id="modal">
+ <div class="modal-box">
+  <h3>Submit Exam?</h3>
+  <button class="btn submit" onclick="submitExam()">Yes</button>
+  <button class="btn next" onclick="closeModal()">Cancel</button>
+ </div>
+</div>
+
+<div id="proctorOverlay">
+ <div>
+  <h2>⚠ Exam Security Alert</h2>
+  <p id="proctorMsg"></p>
+ </div>
+</div>
+
 <script>
-/* ================= GLOBAL STATE ================= */
+ let examLoaded = false;
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxmFdZlBq4m_7SvJtVF9NbyGC-c_of2aqokQtyg81aH97WPo6AT56VvwKYGG_tz4XEq/exec";
 
-const user = JSON.parse(sessionStorage.getItem("user"));
-const exam_id = sessionStorage.getItem("exam_id");
-studentInfo.innerText = `${user.name} (${user.roll})`;
+const user=JSON.parse(sessionStorage.getItem("user"));
+const exam_id=sessionStorage.getItem("exam_id");
+studentInfo.innerText=`${user.name} (${user.roll})`;
 
-let questions = [];
-let index = 0;
-let answers = {};
-let duration = 0;
-let limit = 0;
-let partA = 0;
-let partB = 0;
+let questions=[],index=0,answers={},violations=0;
+let violationLog=[],duration=0,limit=0,partA=0,partB=0;
 
-/* ✅ FIX 1: DEFINE timerStarted */
-let timerStarted = false;
-let autoSubmitted = false;
+const overlay=document.getElementById("proctorOverlay");
+const proctorMsg=document.getElementById("proctorMsg");
 
-/* ================= AUTO SUBMIT ================= */
-function forceAutoSubmit(reason){
- if(autoSubmitted) return;
- autoSubmitted = true;
- console.warn("AUTO SUBMIT:", reason);
- sessionStorage.setItem("exam_submitted","YES");
- submitExam();
-}
 
-/* ================= FULLSCREEN ================= */
+
+/* FULLSCREEN */
 function forceFullscreen(){
  if(!document.fullscreenElement){
   document.documentElement.requestFullscreen().catch(()=>{});
  }
 }
-document.addEventListener("DOMContentLoaded", forceFullscreen);
+document.addEventListener("DOMContentLoaded",forceFullscreen);
+document.addEventListener("click",forceFullscreen);
 
-/* 🔒 BACK BUTTON */
-history.pushState(null,null,location.href);
-window.addEventListener("popstate",()=>forceAutoSubmit("Browser Back"));
-
-/* ================= FETCH META → QUESTIONS ================= */
-fetch(WEBAPP_URL,{
- method:"POST",
- body:new URLSearchParams({action:"getExamMeta", exam_id})
-})
-.then(r=>r.json())
-.then(meta=>{
- duration = Number(meta.duration) * 60;
- limit = Number(meta.violation_limit);
- partA = Number(meta.partA);
- partB = Number(meta.partB);
- vio.innerText = `0 / ${limit}`;
-
- return fetch(WEBAPP_URL,{
-  method:"POST",
-  body:new URLSearchParams({action:"getQuestions", exam_id})
+/* VIOLATIONS */
+function violate(type,auto=false){
+ violations++;
+ vio.innerText=`${violations} / ${limit}`;
+ violationLog.push({type,time:new Date().toLocaleString()});
+ proctorMsg.innerText =
+  `Violation: ${type} | Remaining: ${limit - violations}`;
+ overlay.classList.add("active");
+ setTimeout(()=>overlay.classList.remove("active"),2000);
+ fetch(WEBAPP_URL,{method:"POST",
+  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
  });
-})
-.then(r=>r.json())
-.then(allQ=>{
+ if (violations >= limit && questions.length > 0) {
+ submitExam();
+}
 
- const shuffle = a => [...a].sort(()=>Math.random()-0.5);
+}
 
- const A = shuffle(allQ.filter(q=>q[1]==="PART A")).slice(0, partA);
- const B = shuffle(allQ.filter(q=>q[1]==="PART B")).slice(0, partB);
+/* ================= STRICT PROCTOR EVENTS ================= */
 
- questions = A.concat(B);
-
- /* ✅ FIX 2: HIDE LOADER IMMEDIATELY */
- document.getElementById("loading").style.display="none";
-
- drawPalette();
- loadQ();
- startTimer();
-})
-.catch(err=>{
- console.error(err);
- document.getElementById("loading").innerText =
-  "Network slow… questions loading, please wait";
+/* ❌ Exit fullscreen */
+document.addEventListener("fullscreenchange",()=>{
+ if(!document.fullscreenElement){
+  violate("Exit Fullscreen");
+ }
 });
 
-/* ================= RENDER ================= */
+/* ❌ Notification / call / lock / background */
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden){
+  violate("App Hidden / Notification / Call / Screen Lock");
+ }
+});
+
+/* ❌ Control center / quick app switch */
+window.addEventListener("blur",()=>{
+ violate("App Switch / Control Center Swipe");
+});
+
+/* ❌ Copy / cut / right click */
+["copy","cut","contextmenu"].forEach(e=>{
+ document.addEventListener(e,ev=>{
+  ev.preventDefault();
+  violate(e.toUpperCase());
+ });
+});
+
+/* ❌ Reload / refresh */
+window.addEventListener("beforeunload",()=>{
+  if(questions.length > 0){
+    violate("Page Reload / Refresh");
+  }
+});
+
+
+/* EXAM META */
+/* ================= EXAM META → QUESTIONS (FIXED) ================= */
+
+fetch(WEBAPP_URL,{
+ method:"POST",
+ body:new URLSearchParams({
+   action:"getExamMeta",
+   exam_id
+ })
+})
+.then(r => r.json())
+.then(meta => {
+
+  if(meta.error){
+    alert(meta.error);
+    return;
+  }
+
+  /* 1️⃣ SET META FIRST */
+  duration = Number(meta.duration) * 60;
+  limit    = Number(meta.violation_limit);
+  partA    = Number(meta.partA);
+  partB    = Number(meta.partB);
+
+  vio.innerText = `0 / ${limit}`;
+
+  if(meta.calculator === "YES"){
+    calcBtn.style.display = "inline-flex";
+  }
+
+  /* 2️⃣ NOW FETCH QUESTIONS (SAFE) */
+  return fetch(WEBAPP_URL,{
+    method:"POST",
+    body:new URLSearchParams({
+      action:"getQuestions",
+      exam_id
+    })
+  });
+})
+.then(r => r.json())
+.then(allQ => {
+
+  if(!Array.isArray(allQ) || allQ.length === 0){
+    alert("No questions found");
+    return;
+  }
+
+  /* 3️⃣ FILTER & SLICE */
+  const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
+
+  const partAQuestions = allQ.filter(q => q[1] === "PART A");
+  const partBQuestions = allQ.filter(q => q[1] === "PART B");
+
+  const A = shuffle(partAQuestions).slice(0, partA);
+  const B = shuffle(partBQuestions).slice(0, partB);
+
+  questions = A.concat(B);
+
+  if(!questions.length){
+    alert("Question set empty – check counts");
+    return;
+  }
+
+  /* 4️⃣ FINAL INITIALIZATION */
+  document.getElementById("loading").style.display = "none";
+examLoaded = true;
+  drawPalette();
+  restoreState();
+  loadQ();
+  startTimer();
+})
+.catch(err=>{
+  console.error(err);
+
+  // ❗ Only show error if exam never loaded
+  if(!examLoaded){
+    alert("May Be Loaded Wait");
+  }
+});
+
+
+
+
 function loadQ(){
- const q = questions[index];
- question.innerHTML = `
-  <span class="section">${q[1]}</span>
-  <h3>Q${index+1}. ${q[3]}</h3>
- `;
- bar.style.width = ((index+1)/questions.length*100)+"%";
+  if(index < 0 || index >= questions.length){
+    index = 0;
+  }
+
+  const q = questions[index];
+
+  question.innerHTML = `
+    <span class="section">${q[1]}</span>
+    <h3>Q${index+1}. ${escapeHTML(q[3])}</h3>
+
+    ${q[9] ? `<img class="qimg" src="${q[9]}">` : ""}
+
+    ${["A","B","C","D"].map((o,i)=>`
+      <div class="option ${answers[index]?.ans === o ? 'selected' : ''}"
+        onclick="selectAns('${o}')">
+        ${q[4+i]}
+      </div>
+    `).join("")}
+  `;
+
+  submitBtn.disabled = index !== questions.length - 1;
+ //submitBtn.disabled = false
+ //submitBtn.disabled = questions.length === 0;
+ bar.style.width = ((index + 1) / questions.length * 100) + "%";
 }
+
+
+function selectAns(a){
+  answers[index] = {
+    qid: questions[index][2],
+    ans: a
+  };
+
+  const p = document.getElementById("p"+index);
+  if(p){
+    p.classList.add("answered");
+    p.classList.remove("review");
+  }
+
+  saveState();
+  loadQ();   // 🔥 force redraw (important)
+}
+
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 
 function drawPalette(){
- palette.innerHTML="";
- questions.forEach((_,i)=>{
-  palette.innerHTML+=`<span onclick="index=${i};loadQ()">${i+1}</span>`;
- });
+  palette.innerHTML = "";
+  questions.forEach((_, i)=>{
+    palette.innerHTML += `
+      <span id="p${i}" onclick="index=${i};loadQ()">
+        ${i+1}
+      </span>`;
+  });
 }
 
-/* ================= TIMER ================= */
+function markReview(){document.getElementById("p"+index).classList.add("review")}
+function nextQ(){
+  if(index < questions.length - 1){
+    index++;
+    saveState();
+    loadQ();
+  }
+}
+
+
+/* TIMER */
+let timerRef=null;
+
 function startTimer(){
- if(timerStarted) return;
- timerStarted = true;
+  if(timerStarted) return;   // ⛔ prevents duplicate timers
+  timerStarted = true;
 
- setInterval(()=>{
-  const m=Math.floor(duration/60);
-  const s=duration%60;
-  timer.innerText=`${m}:${String(s).padStart(2,"0")}`;
-  if(--duration<0) submitExam();
- },1000);
+  timerRef = setInterval(()=>{
+    const m = Math.floor(duration / 60);
+    const s = duration % 60;
+    timer.innerText = `${m}:${String(s).padStart(2,"0")}`;
+    duration--;
+    saveState();
+    if(duration < 0) submitExam();
+  },1000);
 }
 
-/* ================= SUBMIT ================= */
+
+
+/* SUBMIT */
+function confirmSubmit(){modal.style.display="flex"}
+function closeModal(){modal.style.display="none"}
+
 function submitExam(){
  const finalAnswers={};
- questions.forEach((q,i)=>{
-  finalAnswers[q[2]] = answers[i]?.ans || "";
- });
- fetch(WEBAPP_URL,{
-  method:"POST",
+questions.forEach((q, i) => {
+  finalAnswers[String(q[2]).trim()] =
+    answers[i]?.ans || "";
+});
+
+
+ fetch(WEBAPP_URL,{method:"POST",
   body:new URLSearchParams({
    action:"submitExam",
    exam_id,
    roll_no:user.roll,
-   answers_json:JSON.stringify(finalAnswers)
+   answers_json:JSON.stringify(finalAnswers),
+   violation_log:JSON.stringify(violationLog),
+   total_violations:violations,
+   //status:"SUBMITTED"
   })
- }).then(()=>location.replace("summary.html"));
+ }).then(()=>location.href="summary.html");
+}
+
+function saveState(){
+ sessionStorage.setItem("answers", JSON.stringify(answers));
+ sessionStorage.setItem("index", index);
+ sessionStorage.setItem("timeLeft", duration);
+ sessionStorage.setItem("violations", violations);
+ 
+}
+
+function restoreState(){
+ const savedSig = sessionStorage.getItem("qSignature");
+ const currentSig = questions.map(q=>q[2]).join(",");
+
+ if(savedSig !== currentSig){
+ sessionStorage.removeItem("answers");
+ sessionStorage.removeItem("index");
+ sessionStorage.removeItem("timeLeft");
+ sessionStorage.removeItem("violations");
+ answers = {};
+ index = 0;
+ return;
+}
+
+ if(sessionStorage.getItem("answers")){
+   answers = JSON.parse(sessionStorage.getItem("answers"));
+   index = Number(sessionStorage.getItem("index") || 0);
+   duration = Number(sessionStorage.getItem("timeLeft") || duration);
+   violations = Number(sessionStorage.getItem("violations") || 0);
+   vio.innerText=`${violations} / ${limit}`;
+ }
+}
+
+/* CALCULATOR */
+function toggleCalc(){
+ calculator.style.display=calculator.style.display=="block"?"none":"block";
 }
 </script>
-
 </body>
-</html>
+</html> Backbutton is to submit the exam after submit it shows already submitted

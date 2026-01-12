@@ -287,8 +287,9 @@ window.addEventListener("blur",()=>{
 
 /* ❌ Reload / refresh */
 window.addEventListener("beforeunload",()=>{
- sessionStorage.setItem("resume","YES");
- violate("Page Reload / Refresh");
+  if(questions.length > 0){
+    violate("Page Reload / Refresh");
+  }
 });
 
 
@@ -391,8 +392,9 @@ function loadQ(){
     `).join("")}
   `;
 
-  submitBtn.disabled = index !== questions.length - 1;
-  bar.style.width = ((index + 1) / questions.length * 100) + "%";
+  //submitBtn.disabled = index !== questions.length - 1;
+ submitBtn.disabled = false;
+ bar.style.width = ((index + 1) / questions.length * 100) + "%";
 }
 
 
@@ -433,22 +435,32 @@ function drawPalette(){
 }
 
 function markReview(){document.getElementById("p"+index).classList.add("review")}
-function nextQ(){if(index<questions.length-1){index++;saveState();loadQ()}}
+function nextQ(){
+  if(index < questions.length - 1){
+    index++;
+    saveState();
+    loadQ();
+  }
+}
+
 
 /* TIMER */
 let timerRef=null;
 
 function startTimer(){
- if(timerRef) clearInterval(timerRef);
- timerRef=setInterval(()=>{
-  const m=Math.floor(duration/60),
-        s=duration%60;
-  timer.innerText=`${m}:${String(s).padStart(2,"0")}`;
-  duration--;
-  saveState();
-  if(duration<0) submitExam();
- },1000);
+  if(timerStarted) return;   // ⛔ prevents duplicate timers
+  timerStarted = true;
+
+  timerRef = setInterval(()=>{
+    const m = Math.floor(duration / 60);
+    const s = duration % 60;
+    timer.innerText = `${m}:${String(s).padStart(2,"0")}`;
+    duration--;
+    saveState();
+    if(duration < 0) submitExam();
+  },1000);
 }
+
 
 
 /* SUBMIT */

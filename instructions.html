@@ -128,6 +128,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxGNJoXPSsoCQfQQPawIdwF
 
 /* ================= LOGIC ================= */
 const examId = new URLSearchParams(window.location.search).get("exam_id");
+console.log("Exam ID from URL:", examId);
 
 if (!examId) {
   document.getElementById("loading").innerText = "Invalid Exam ID";

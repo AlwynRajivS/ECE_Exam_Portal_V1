@@ -215,6 +215,7 @@ header .grp{display:flex;gap:14px;align-items:center}
 </div>
 
 <script>
+ let examLoaded = false;
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxmFdZlBq4m_7SvJtVF9NbyGC-c_of2aqokQtyg81aH97WPo6AT56VvwKYGG_tz4XEq/exec";
 
 const user=JSON.parse(sessionStorage.getItem("user"));
@@ -358,7 +359,7 @@ fetch(WEBAPP_URL,{
 
   /* 4️⃣ FINAL INITIALIZATION */
   document.getElementById("loading").style.display = "none";
-
+examLoaded = true;
   drawPalette();
   restoreState();
   loadQ();
@@ -366,8 +367,13 @@ fetch(WEBAPP_URL,{
 })
 .catch(err=>{
   console.error(err);
-  alert("Failed to load exam");
+
+  // ❗ Only show error if exam never loaded
+  if(!examLoaded){
+    alert("Failed to load exam. Please check your internet connection.");
+  }
 });
+
 
 
 

@@ -11,48 +11,40 @@ body{
   font-family:'Segoe UI',sans-serif;
   background:linear-gradient(135deg,#e3f2fd,#f5f5f5);
 }
-
 .container{
   max-width:900px;
   margin:auto;
   padding:20px;
 }
-
 .card{
   background:#fff;
   border-radius:18px;
   padding:25px;
   box-shadow:0 12px 30px rgba(0,0,0,.2);
 }
-
 h2{
   color:#0d47a1;
   margin-top:0;
 }
-
 .exam-meta{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:12px;
   margin-bottom:20px;
 }
-
 .meta-box{
   background:#f1f5ff;
   padding:12px;
   border-radius:10px;
   font-size:14px;
 }
-
 .meta-box b{
   color:#0d47a1;
 }
-
 ul{
   line-height:1.8;
   color:#333;
 }
-
 .warning{
   background:#fff3e0;
   border-left:6px solid #ef6c00;
@@ -60,15 +52,6 @@ ul{
   border-radius:10px;
   margin:15px 0;
 }
-
-.info{
-  background:#e3f2fd;
-  border-left:6px solid #1565c0;
-  padding:15px;
-  border-radius:10px;
-  margin:15px 0;
-}
-
 .btn{
   background:linear-gradient(135deg,#0d47a1,#1976d2);
   color:#fff;
@@ -79,16 +62,13 @@ ul{
   cursor:pointer;
   width:100%;
 }
-
 .btn:hover{opacity:.9}
-
 .footer{
   text-align:center;
   color:#666;
   font-size:13px;
   margin-top:20px;
 }
-
 .loading{
   text-align:center;
   color:#999;
@@ -112,30 +92,19 @@ ul{
     <div class="meta-box"><b>Exam Name:</b> <span id="examName"></span></div>
     <div class="meta-box"><b>Part A Questions:</b> <span id="partA"></span></div>
     <div class="meta-box"><b>Part B Questions:</b> <span id="partB"></span></div>
-    <div class="meta-box"><b>Total Questions:</b> <span id="totalMarks"></span></div>
-    <div class="meta-box"><b>Duration:</b> <span id="duration"></span> minutes</div>
-    <div class="meta-box"><b>Max Violations:</b> <span id="maxViolation"></span></div>
+    <div class="meta-box"><b>Total Marks:</b> <span id="totalMarks"></span></div>
+    <div class="meta-box"><b>Maximum Violations:</b> <span id="maxViolation"></span></div>
   </div>
 
   <ul>
     <li>The examination is <b>strictly time bound</b>.</li>
-    <li>Exam must be attended in <b>full-screen mode</b>.</li>
-    <li><b>Tab switch, copy/paste, screen exit, notifications</b> are recorded.</li>
+    <li>The exam must be taken in <b>full-screen mode</b>.</li>
+    <li><b>Tab switching, copy, notifications, screen exit</b> are recorded as violations.</li>
     <li>Exceeding maximum violations leads to <b>auto submission</b>.</li>
     <li>Questions appear <b>one at a time</b>.</li>
     <li>You may <b>mark questions for review</b>.</li>
-    <li>All answers are <b>auto-saved</b>.</li>
+    <li>Answers are saved automatically.</li>
   </ul>
-
-  <div class="info">
-    ℹ️ <b>Usage Instructions:</b>
-    <ul>
-      <li>Use <b>Google Chrome</b> for best performance.</li>
-      <li>Ensure <b>stable internet connection</b>.</li>
-      <li>Do not refresh or close the browser.</li>
-      <li>Keep webcam (if enabled) unobstructed.</li>
-    </ul>
-  </div>
 
   <div class="warning">
     ⚠️ <b>Important:</b><br>
@@ -154,22 +123,19 @@ Online Examination System
 </div>
 
 <script>
-// -------------------- CONFIG --------------------
-const API_URL = "https://script.google.com/macros/s/AKfycbztdpg5N3WFEyVmi3_pPVkK9r3Na9LafZ73u8m0LQpJUF2Toqk3NzEfm86_9tKrQZXC/exec";
+/* ================= CONFIG ================= */
+const API_URL = "https://script.google.com/macros/s/AKfycbx7ak3hbFEjvt3_PxIMMa1WpjxbHrn2BNxiO5MCoFxBAe1BFDKPTGFOFsXz0UIdbgyl/exec";
 
-// -------------------- LOGIC --------------------
-const examId = new URLSearchParams(location.search).get("exam_id");
+/* ================= LOGIC ================= */
+const examId = new URLSearchParams(window.location.search).get("exam_id");
 
-// fallback safety
 if (!examId) {
   document.getElementById("loading").innerText = "Invalid Exam ID";
 } else {
 
   fetch(API_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       action: "getExamMeta",
       exam_id: examId
@@ -183,31 +149,27 @@ if (!examId) {
       return;
     }
 
-    // exam_id from URL
     document.getElementById("examId").innerText = examId;
-
-    // exam title from session or fallback
     document.getElementById("examName").innerText =
       sessionStorage.getItem("exam_title") || "Online Examination";
 
     document.getElementById("partA").innerText = data.partA;
     document.getElementById("partB").innerText = data.partB;
-    document.getElementById("duration").innerText = data.duration;
     document.getElementById("maxViolation").innerText = data.violation_limit;
 
-    document.getElementById("totalMarks").innerText =
-      Number(data.partA) + Number(data.partB);
+    // Total marks logic (Part A = 1 mark, Part B = 2 marks)
+    const totalMarks = Number(data.partA) * 1 + Number(data.partB) * 2;
+    document.getElementById("totalMarks").innerText = totalMarks;
 
     document.getElementById("loading").style.display = "none";
     document.getElementById("examDetails").style.display = "block";
   })
-  .catch(err => {
-    console.error(err);
+  .catch(() => {
     document.getElementById("loading").innerText = "Failed to load exam data";
   });
 }
 
-// -------------------- ACTION --------------------
+/* ================= ACTION ================= */
 function proceedExam(){
   if(confirm("The exam will start in full screen mode. Continue?")){
     document.documentElement.requestFullscreen();

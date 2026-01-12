@@ -159,27 +159,33 @@ const examId = new URLSearchParams(window.location.search).get("exam_id");
 
   
 
-const API_URL = "https://script.google.com/macros/s/AKfycbx1UhI9KETgaMilUusZwiVx6EL3cH0Tmw7STq_gM_Urq0blyFK_WZDFHXGzVEgJpuqj/exec?exam_id="+examId;
+const API_URL = "https://script.google.com/macros/s/AKfycbxgt5pd3rVOzw362so00ZEeAbNW0UlrGbd_fK1PDq7A-qSr0Winx2KxZAGWFtAMp-A5/exec?exam_id="+examId;
 
 fetch(API_URL)
 .then(res => res.json())
 .then(data => {
 
-  document.getElementById("examId").innerText = data.exam_id;
-  document.getElementById("examName").innerText = data.exam_name;
-  document.getElementById("partA").innerText = data.part_a_questions;
-  document.getElementById("partB").innerText = data.part_b_questions;
+  if (data.error) {
+    document.getElementById("loading").innerText = data.error;
+    return;
+  }
 
-  // FIX HERE 👇
+  document.getElementById("examId").innerText = data.exam_id;
+  document.getElementById("examName").innerText = data.title;
+  document.getElementById("partA").innerText = data.partA;
+  document.getElementById("partB").innerText = data.partB;
+
+  // total questions = partA + partB
   document.getElementById("totalMarks").innerText =
-    (data.part_a_questions + data.part_b_questions);
+    Number(data.partA) + Number(data.partB);
 
   document.getElementById("duration").innerText = data.duration;
-  document.getElementById("maxViolation").innerText = data.max_violation;
+  document.getElementById("maxViolation").innerText = data.violation_limit;
 
   document.getElementById("loading").style.display = "none";
   document.getElementById("examDetails").style.display = "block";
 })
+
 
 .catch(err=>{
   document.getElementById("loading").innerText="Failed to load exam data";

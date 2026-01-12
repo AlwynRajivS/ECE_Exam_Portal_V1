@@ -302,9 +302,53 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
  </div>
 </div>
 
+<div class="calculator" id="calculator">
+  <input class="calc-screen" id="calcScreen" readonly>
+
+  <div style="display:flex;flex-wrap:wrap;gap:6px">
+    <button class="calc-btn" onclick="calc('sin(')">sin</button>
+    <button class="calc-btn" onclick="calc('cos(')">cos</button>
+    <button class="calc-btn" onclick="calc('tan(')">tan</button>
+    <button class="calc-btn" onclick="calc('log(')">log</button>
+
+    <button class="calc-btn" onclick="calc('7')">7</button>
+    <button class="calc-btn" onclick="calc('8')">8</button>
+    <button class="calc-btn" onclick="calc('9')">9</button>
+    <button class="calc-btn" onclick="calc('/')">÷</button>
+
+    <button class="calc-btn" onclick="calc('4')">4</button>
+    <button class="calc-btn" onclick="calc('5')">5</button>
+    <button class="calc-btn" onclick="calc('6')">6</button>
+    <button class="calc-btn" onclick="calc('*')">×</button>
+
+    <button class="calc-btn" onclick="calc('1')">1</button>
+    <button class="calc-btn" onclick="calc('2')">2</button>
+    <button class="calc-btn" onclick="calc('3')">3</button>
+    <button class="calc-btn" onclick="calc('-')">−</button>
+
+    <button class="calc-btn" onclick="calc('0')">0</button>
+    <button class="calc-btn" onclick="calc('.')">.</button>
+    <button class="calc-btn" onclick="calculate()">=</button>
+    <button class="calc-btn" onclick="calc('+')">+</button>
+<button class="calc-btn" onclick="calc('sqrt(')">√</button>
+<button class="calc-btn" onclick="calc('pi')">π</button>
+<button class="calc-btn" onclick="calc('^')">xʸ</button>
+<button class="calc-btn" onclick="calc('ln(')">ln</button>
+
+    <button class="calc-btn" onclick="clearCalc()">C</button>
+    <button class="calc-btn" onclick="calc('(')">(</button>
+    <button class="calc-btn" onclick="calc(')')">)</button>
+  </div>
+</div>
+
+
 <script>
+let timerStarted = false;
+
  let examLoaded = false;
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxmFdZlBq4m_7SvJtVF9NbyGC-c_of2aqokQtyg81aH97WPo6AT56VvwKYGG_tz4XEq/exec";
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+
 
 const user=JSON.parse(sessionStorage.getItem("user"));
 const exam_id=sessionStorage.getItem("exam_id");
@@ -618,6 +662,45 @@ function restoreState(){
 function toggleCalc(){
  calculator.style.display=calculator.style.display=="block"?"none":"block";
 }
+
+const calculator = document.getElementById("calculator");
+const calcScreen = document.getElementById("calcScreen");
+
+/* Toggle */
+function toggleCalc(){
+  calculator.style.display =
+    calculator.style.display === "block" ? "none" : "block";
+}
+
+/* Append value */
+function calc(v){
+  calcScreen.value += v;
+}
+
+/* Clear */
+function clearCalc(){
+  calcScreen.value = "";
+}
+
+/* SAFE CALCULATION USING MATH.JS */
+function calculate(){
+  try{
+    const result = math.evaluate(calcScreen.value, {
+      sin: math.sin,
+      cos: math.cos,
+      tan: math.tan,
+      log: math.log10,   // base-10
+      ln: math.log,      // natural log
+      pi: math.pi,
+      e: math.e
+    });
+    calcScreen.value = result;
+  }catch(err){
+    calcScreen.value = "Error";
+  }
+}
+
+
 </script>
 </body>
 </html> 

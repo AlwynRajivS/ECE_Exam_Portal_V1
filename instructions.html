@@ -154,7 +154,12 @@ Online Examination System
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
+
+const examId = new URLSearchParams(window.location.search).get("exam_id");
+
+  
+
+const API_URL = "https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec?exam_id="+examId;
 
 fetch(API_URL)
 .then(res => res.json())

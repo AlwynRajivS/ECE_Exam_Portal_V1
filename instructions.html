@@ -159,35 +159,31 @@ const examId = new URLSearchParams(window.location.search).get("exam_id");
 
   
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxgt5pd3rVOzw362so00ZEeAbNW0UlrGbd_fK1PDq7A-qSr0Winx2KxZAGWFtAMp-A5/exec?exam_id="+examId;
+const API_URL = "https://script.google.com/macros/s/AKfycbwlP7sFqo_4iMcsCuCvAYtbq3TIitYK06h9Z_qHxKJFPfXJE2UJxjFQ8NPBrTnpDUk4/exec?exam_id="+examId;
 
 fetch(API_URL)
-.then(res => res.json())
-.then(data => {
-
-  if (data.error) {
-    document.getElementById("loading").innerText = data.error;
-    return;
-  }
+.then(res => {
+  console.log("STATUS:", res.status);
+  return res.text();
+})
+.then(txt => {
+  console.log("RAW RESPONSE:", txt);
+  const data = JSON.parse(txt);
 
   document.getElementById("examId").innerText = data.exam_id;
   document.getElementById("examName").innerText = data.title;
   document.getElementById("partA").innerText = data.partA;
   document.getElementById("partB").innerText = data.partB;
-
-  // total questions = partA + partB
   document.getElementById("totalMarks").innerText =
     Number(data.partA) + Number(data.partB);
-
   document.getElementById("duration").innerText = data.duration;
   document.getElementById("maxViolation").innerText = data.violation_limit;
 
-  document.getElementById("loading").style.display = "none";
-  document.getElementById("examDetails").style.display = "block";
+  document.getElementById("loading").style.display="none";
+  document.getElementById("examDetails").style.display="block";
 })
-
-
-.catch(err=>{
+.catch(err => {
+  console.error("FETCH FAILED:", err);
   document.getElementById("loading").innerText="Failed to load exam data";
 });
 

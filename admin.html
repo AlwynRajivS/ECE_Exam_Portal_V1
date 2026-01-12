@@ -392,22 +392,27 @@ function uploadStudents(){
 
 /* ================= MAPPING ================= */
 function uploadMapping(){
- parseCSV(mapFile.files[0],data=>{
-  data.forEach(m=>{
-   fetch(WEBAPP_URL,{method:"POST",
-    body:new URLSearchParams({
-     action:"mapExam",
-     exam_id:m.exam_id,
-     roll_no:m.roll_no||"",
-     dept:m.dept||"",
-     year:m.year||"",
-     section:m.section||""
-    })
-   });
+  parseCSV(mapFile.files[0],data=>{
+    Promise.all(
+      data.map(m =>
+        fetch(WEBAPP_URL,{
+          method:"POST",
+          body:new URLSearchParams({
+            action:"mapExam",
+            exam_id:m.exam_id,
+            roll_no:m.roll_no||"",
+            dept:m.dept||"",
+            year:m.year||"",
+            section:m.section||""
+          })
+        })
+      )
+    ).then(()=>{
+      alert("Mapping Completed Successfully");
+    });
   });
-  alert("Mapping Completed");
- });
 }
+
 
 /* ================= CSV ================= */
 function parseCSV(file,cb){
@@ -523,3 +528,4 @@ loadExams();
 
 </body>
 </html>
+

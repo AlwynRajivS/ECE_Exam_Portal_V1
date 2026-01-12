@@ -58,6 +58,88 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
  color:#fff
 }
 
+ /* Header Base */
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:8px 12px;
+  background:#0d47a1;
+  color:#fff;
+  gap:8px;
+}
+
+/* Student Info */
+.topbar .left{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:14px;
+  font-weight:600;
+}
+
+.topbar .left i{
+  font-size:16px;
+}
+
+/* Right Section */
+.topbar .right{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+/* Info Chips */
+.chip{
+  background:rgba(255,255,255,0.15);
+  padding:4px 8px;
+  border-radius:12px;
+  font-size:12px;
+  white-space:nowrap;
+}
+
+/* Calculator Button */
+.calc-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  border:none;
+  background:#455a64;
+  color:#fff;
+}
+
+/* 🔹 Mobile View */
+@media (max-width:600px){
+  .topbar{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .topbar .right{
+    width:100%;
+    justify-content:space-between;
+  }
+
+  .chip{
+    flex:1;
+    text-align:center;
+  }
+}
+
+/* 🔹 Ultra Small Phones */
+@media (max-width:400px){
+  .left span{
+    font-size:12px;
+  }
+
+  .chip{
+    font-size:11px;
+  }
+}
+
 .controls{margin-top:26px}
 .btn{
  padding:12px 20px;border:none;
@@ -146,21 +228,27 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
 
 <body>
 
-<header>
- <div class="grp">
-  <i class="fa-solid fa-user-graduate"></i>
-  <span id="studentInfo"></span>
- </div>
- <div class="grp">
-  <div>⏱ <span id="timer">00:00</span></div>
-  <div>⚠ <span id="vio">0 / 0</span></div>
-  <button id="calcBtn" class="btn"
-   style="display:none;background:#455a64"
-   onclick="toggleCalc()">
-   <i class="fa-solid fa-calculator"></i>
-  </button>
- </div>
+<header class="topbar">
+  <div class="left">
+    <i class="fa-solid fa-user-graduate"></i>
+    <span id="studentInfo">Student Name</span>
+  </div>
+
+  <div class="right">
+    <div class="chip time">
+      ⏱ <span id="timer">00:00</span>
+    </div>
+    <div class="chip vio">
+      ⚠ <span id="vio">0 / 0</span>
+    </div>
+
+    <button id="calcBtn" class="calc-btn"
+      onclick="toggleCalc()">
+      <i class="fa-solid fa-calculator"></i>
+    </button>
+  </div>
 </header>
+
 
 <div class="progress"><span id="bar"></span></div>
 
@@ -532,4 +620,4 @@ function toggleCalc(){
 }
 </script>
 </body>
-</html> Backbutton is to submit the exam after submit it shows already submitted
+</html> 

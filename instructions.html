@@ -169,13 +169,18 @@ fetch(API_URL)
   document.getElementById("examName").innerText = data.exam_name;
   document.getElementById("partA").innerText = data.part_a_questions;
   document.getElementById("partB").innerText = data.part_b_questions;
-  document.getElementById("totalMarks").innerText = data.total_marks;
+
+  // FIX HERE 👇
+  document.getElementById("totalMarks").innerText =
+    (data.part_a_questions + data.part_b_questions);
+
   document.getElementById("duration").innerText = data.duration;
   document.getElementById("maxViolation").innerText = data.max_violation;
 
-  document.getElementById("loading").style.display="none";
-  document.getElementById("examDetails").style.display="block";
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("examDetails").style.display = "block";
 })
+
 .catch(err=>{
   document.getElementById("loading").innerText="Failed to load exam data";
 });

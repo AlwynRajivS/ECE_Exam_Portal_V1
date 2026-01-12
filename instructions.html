@@ -155,36 +155,43 @@ Online Examination System
 
 <script>
 
-const examId = new URLSearchParams(window.location.search).get("exam_id");
+const examId = new URLSearchParams(location.search).get("exam_id");
 
-  
-
-const API_URL = "https://script.google.com/macros/s/AKfycbwlP7sFqo_4iMcsCuCvAYtbq3TIitYK06h9Z_qHxKJFPfXJE2UJxjFQ8NPBrTnpDUk4/exec?exam_id="+examId;
-
-fetch(API_URL)
-.then(res => {
-  console.log("STATUS:", res.status);
-  return res.text();
+fetch("https://script.google.com/macros/s/AKfycbx1UhI9KETgaMilUusZwiVx6EL3cH0Tmw7STq_gM_Urq0blyFK_WZDFHXGzVEgJpuqj/exec", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/x-www-form-urlencoded"
+  },
+  body: new URLSearchParams({
+    action: "getExamMeta",
+    exam_id: examId
+  })
 })
-.then(txt => {
-  console.log("RAW RESPONSE:", txt);
-  const data = JSON.parse(txt);
+.then(res => res.json())
+.then(data => {
+
+  if (data.error) {
+    document.getElementById("loading").innerText = data.error;
+    return;
+  }
 
   document.getElementById("examId").innerText = data.exam_id;
   document.getElementById("examName").innerText = data.title;
   document.getElementById("partA").innerText = data.partA;
   document.getElementById("partB").innerText = data.partB;
-  document.getElementById("totalMarks").innerText =
-    Number(data.partA) + Number(data.partB);
   document.getElementById("duration").innerText = data.duration;
   document.getElementById("maxViolation").innerText = data.violation_limit;
 
-  document.getElementById("loading").style.display="none";
-  document.getElementById("examDetails").style.display="block";
+  // total questions (or marks if 1 mark each)
+  document.getElementById("totalMarks").innerText =
+    Number(data.partA) + Number(data.partB);
+
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("examDetails").style.display = "block";
 })
 .catch(err => {
-  console.error("FETCH FAILED:", err);
-  document.getElementById("loading").innerText="Failed to load exam data";
+  console.error(err);
+  document.getElementById("loading").innerText = "Failed to load exam data";
 });
 
 function proceedExam(){

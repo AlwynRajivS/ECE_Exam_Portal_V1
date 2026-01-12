@@ -454,9 +454,22 @@ fetch(WEBAPP_URL,{
 
   vio.innerText = `0 / ${limit}`;
 
-  if(meta.calculator === "YES"){
-    calcBtn.style.display = "inline-flex";
-  }
+  /* ================= CALCULATOR BACKEND CONTROL ================= */
+
+const calcPermission =
+  String(meta.calc || meta.calculator || "NO")
+    .trim()
+    .toUpperCase();
+
+if (calcPermission === "YES") {
+  // ✅ ENABLE calculator
+  calcBtn.style.display = "inline-flex";
+} else {
+  // ❌ DISABLE calculator
+  calcBtn.style.display = "none";
+  calculator.style.display = "none"; // force close if open
+}
+
 
   /* 2️⃣ NOW FETCH QUESTIONS (SAFE) */
   return fetch(WEBAPP_URL,{

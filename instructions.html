@@ -55,6 +55,7 @@ ul{line-height:1.8;color:#333}
     <div class="meta-box"><b>Part A Questions:</b> <span id="partA"></span></div>
     <div class="meta-box"><b>Part B Questions:</b> <span id="partB"></span></div>
     <div class="meta-box"><b>Total Marks:</b> <span id="totalMarks"></span></div>
+    <div class="meta-box"><b>Duration:</b> <span id="duration"></span></div>
     <div class="meta-box"><b>Max Violations:</b> <span id="maxViolation"></span></div>
   </div>
 
@@ -109,10 +110,9 @@ if (!examId) {
 
     document.getElementById("examId").innerText = examId;
     document.getElementById("examName").innerText = data.exam_name;
-
-
     document.getElementById("partA").innerText = data.partA;
     document.getElementById("partB").innerText = data.partB;
+    document.getElementById("duration").innerText = data.duration;
     document.getElementById("maxViolation").innerText = data.violation_limit;
 
     document.getElementById("totalMarks").innerText =

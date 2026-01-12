@@ -393,7 +393,8 @@ function loadQ(){
   `;
 
   //submitBtn.disabled = index !== questions.length - 1;
- submitBtn.disabled = false;
+ //submitBtn.disabled = false
+ submitBtn.disabled = questions.length === 0;
  bar.style.width = ((index + 1) / questions.length * 100) + "%";
 }
 

@@ -16,7 +16,6 @@ body.dark{
   --bg:#121212;
   --card:#1e1e1e;
   --text:#e0e0e0;
-  --primary:#90caf9;
 }
 body{
   margin:0;
@@ -201,8 +200,7 @@ const WEBAPP_URL="https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEi
 
 const exam_id=sessionStorage.getItem("exam_id");
 const user=JSON.parse(sessionStorage.getItem("user"));
-document.getElementById("studentInfo").innerHTML=
-`👨‍🎓 ${user.name} | 🆔 ${user.roll} | 📝 Exam ID: ${exam_id}`;
+studentInfo.innerHTML=`👨‍🎓 ${user.name} | 🆔 ${user.roll} | 📝 Exam ID: ${exam_id}`;
 
 const bar=document.getElementById("bar");
 const txt=document.getElementById("loadText");
@@ -228,7 +226,7 @@ Promise.all([
     OQ++; if(!s)ONA++; else if(s===c)OC++; else OW++;
   });
 
-  document.getElementById("overall").innerHTML=`
+  overall.innerHTML=`
   <div class="summary">
     <div class="summary-box"><strong>${OQ}</strong><br>Total</div>
     <div class="summary-box"><strong>${OC}</strong><br>Correct</div>
@@ -250,11 +248,12 @@ Promise.all([
         <span class="correct">${opt[ck]}</span>
       </div>
     </div>`;
+    overall.innerHTML+=card;
     (q[1]==="PART A"?partA:partB).innerHTML+=card;
   });
 
   setP(100);
-  document.getElementById("loading").style.display="none";
+  loading.style.display="none";
 });
 </script>
 

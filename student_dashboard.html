@@ -9,126 +9,163 @@
  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-/* ================= EXISTING STYLES (UNCHANGED) ================= */
 :root{
-  --blue:#0d47a1;--blue2:#1976d2;--green:#2e7d32;
-  --orange:#ef6c00;--gray:#546e7a;--bg:#eef2f7;
+  --blue:#0d47a1;
+  --blue2:#1976d2;
+  --green:#2e7d32;
+  --orange:#ef6c00;
+  --gray:#546e7a;
+  --bg:#eef2f7;
 }
 *{box-sizing:border-box;font-family:'Segoe UI',system-ui}
 body{margin:0;background:var(--bg)}
+
 header{
   background:linear-gradient(135deg,var(--blue),var(--blue2));
-  color:#fff;padding:22px 16px;text-align:center;
-  font-size:22px;font-weight:600;position:sticky;top:0;z-index:20;
+  color:#fff;
+  padding:22px 16px;
+  text-align:center;
+  font-size:22px;
+  font-weight:600;
+  position:sticky;top:0;z-index:20;
   box-shadow:0 8px 24px rgba(0,0,0,.35);
 }
 .container{max-width:1200px;margin:auto;padding:20px}
+
 .footer{text-align:center;margin-top:18px;font-size:12px;color:#777}
+
 .profile{
-  background:#fff;border-radius:26px;padding:24px;
-  display:flex;gap:18px;box-shadow:0 16px 40px rgba(0,0,0,.18);
+  background:#fff;
+  border-radius:26px;
+  padding:24px;
+  display:flex;
+  gap:18px;
+  box-shadow:0 16px 40px rgba(0,0,0,.18);
   margin-bottom:36px;
 }
 .profile i{font-size:66px;color:var(--blue)}
+
 .section{margin-bottom:40px}
-.section-title{display:flex;align-items:center;gap:8px;font-size:20px;color:var(--blue)}
-.exam-card{
-  background:#fff;border-radius:30px;padding:30px 26px 26px;
-  margin-bottom:24px;box-shadow:0 20px 44px rgba(0,0,0,.18);
-  position:relative;text-align:center;
+.section-title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:20px;
+  color:var(--blue);
 }
+
+.exam-card{
+  background:#fff;
+  border-radius:30px;
+  padding:30px 26px 26px;
+  margin-bottom:24px;
+  box-shadow:0 20px 44px rgba(0,0,0,.18);
+  position:relative;
+  text-align:center;
+}
+
 .status-badge{
-  position:absolute;top:18px;right:18px;
-  padding:6px 14px;font-size:12px;font-weight:700;
-  color:#fff;border-radius:20px;
+  position:absolute;
+  top:18px;
+  right:18px;
+  padding:6px 14px;
+  font-size:12px;
+  font-weight:700;
+  color:#fff;
+  border-radius:20px;
 }
 .status-live{background:#2e7d32}
 .status-upcoming{background:#ef6c00}
 .status-completed{background:#546e7a}
-@keyframes pulse{
-  0%{box-shadow:0 0 0 rgba(46,125,50,.4)}
-  50%{box-shadow:0 0 22px rgba(46,125,50,.7)}
-  100%{box-shadow:0 0 0 rgba(46,125,50,.4)}
+
+.exam-info h4{
+  margin:14px 0 6px;
+  font-size:22px;
+  color:var(--blue);
 }
-.status-live{animation:pulse 2.4s infinite}
-.exam-info h4{margin:14px 0 6px;font-size:22px;color:var(--blue)}
 .exam-info p{margin:4px 0;color:#666}
+
 .meta{
-  margin:18px auto;padding:18px;border-radius:20px;
-  background:#e3f2fd;max-width:420px;text-align:left;
+  margin:18px auto;
+  padding:18px;
+  border-radius:20px;
+  background:#e3f2fd;
+  max-width:420px;
+  text-align:left;
 }
-.meta .row{display:flex;gap:10px;margin:8px 0;font-weight:600;color:#0d47a1}
+.meta .row{
+  display:flex;
+  gap:10px;
+  margin:8px 0;
+  font-weight:600;
+  color:#0d47a1;
+}
 .meta .total{
-  margin-top:10px;padding-top:10px;
+  margin-top:10px;
+  padding-top:10px;
   border-top:2px dashed #90caf9;
-  font-size:18px;font-weight:800;color:#2e7d32;
+  font-size:18px;
+  font-weight:800;
+  color:#2e7d32;
 }
+
 .btn{
-  padding:16px;border:none;border-radius:30px;font-size:16px;
-  cursor:pointer;color:#fff;display:flex;gap:10px;
-  align-items:center;justify-content:center;width:100%;margin-top:14px;
+  padding:16px;
+  border:none;
+  border-radius:30px;
+  font-size:16px;
+  cursor:pointer;
+  color:#fff;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  margin-top:14px;
 }
 .start{background:#2e7d32}
 .review{background:#1976d2}
 .logout{background:#c62828;margin-top:30px}
+
 .empty{
-  background:#fff;padding:26px;border-radius:26px;
-  text-align:center;color:#777;
+  background:#fff;
+  padding:26px;
+  border-radius:26px;
+  text-align:center;
+  color:#777;
   box-shadow:0 10px 22px rgba(0,0,0,.14);
 }
+
 @media(max-width:600px){
   .profile{flex-direction:column;text-align:center}
 }
-
-/* ================= SAFE ADD-ONS ================= */
-
-/* progress bar */
-#progress{height:4px;background:#bbdefb;border-radius:4px;overflow:hidden;margin-bottom:16px}
-#progress span{display:block;height:100%;width:0;background:#1976d2;animation:load 2.5s linear infinite}
-@keyframes load{to{width:100%}}
-
-/* skeleton using existing .empty look */
-.skeleton{
-  height:120px;margin-bottom:24px;border-radius:26px;
-  background:linear-gradient(90deg,#eee,#f5f5f5,#eee);
-  animation:shimmer 1.3s infinite;
-}
-@keyframes shimmer{
-  0%{background-position:-400px}
-  100%{background-position:400px}
-}
-
-/* fade-in without affecting layout */
-.fade-in{animation:fade .45s ease forwards}
-@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
 </style>
 </head>
 
 <body>
 
 <header>
- <i class="fa-solid fa-user-graduate"></i> Student Examination Portal
+ <i class="fa-solid fa-user-graduate"></i>
+ Student Examination Portal
 </header>
 
 <div class="container">
 
 <div class="profile" id="profile"></div>
 
-<div id="progress"><span></span></div>
-
 <div class="section">
  <h3 class="section-title"><i class="fa-solid fa-bolt"></i> Live Exams</h3>
- <div id="live"></div>
+ <div id="live" class="empty">Loading exams...</div>
 </div>
 
 <div class="section">
  <h3 class="section-title"><i class="fa-solid fa-calendar"></i> Scheduled Exams</h3>
- <div id="upcoming"></div>
+ <div id="upcoming" class="empty">Loading exams...</div>
 </div>
 
 <div class="section">
  <h3 class="section-title"><i class="fa-solid fa-check"></i> Completed Exams</h3>
- <div id="completed"></div>
+ <div id="completed" class="empty">Loading exams...</div>
 </div>
 
 <button class="btn logout" onclick="logout()">
@@ -139,124 +176,135 @@ header{
 </div>
 
 <script>
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzQAZuTBNRUdr86h0xC3C_KSj5M7-AC4ObFlMeGov_j9na-iOnmaCFMJqrauw1ad0Ra/exec";
+const WEBAPP_URL =
+"https://script.google.com/macros/s/AKfycbzQAZuTBNRUdr86h0xC3C_KSj5M7-AC4ObFlMeGov_j9na-iOnmaCFMJqrauw1ad0Ra/exec";
 
-/* ================= USER GUARD (CRITICAL) ================= */
+/* ===== SESSION CHECK (MANDATORY) ===== */
 const userRaw = sessionStorage.getItem("user");
-if (!userRaw) {
-  alert("Session expired. Please login again.");
-  location.href = "index.html";
-  throw new Error("User session missing");
+if(!userRaw){
+ alert("Session expired. Please login again.");
+ location.href="index.html";
 }
 const user = JSON.parse(userRaw);
 
-/* ================= PROFILE ================= */
+/* ===== PROFILE ===== */
 profile.innerHTML = `
 <i class="fa-solid fa-circle-user"></i>
 <div>
-  <h3>${user.name}</h3>
-  <p>${user.roll} | ${user.dept}</p>
-  <p>${user.year} - ${user.section}</p>
+<h3>${user.name}</h3>
+<p>${user.roll} | ${user.dept}</p>
+<p>${user.year} - ${user.section}</p>
 </div>`;
 
-/* ================= CACHE ================= */
-const CACHE_KEY = "exam_cache_" + user.roll;
-let rendered = false;
-
-/* ================= RENDER (UNCHANGED LOGIC) ================= */
-function render([exams, results]) {
-  rendered = true;
-
-  live.innerHTML = "";
-  upcoming.innerHTML = "";
-  completed.innerHTML = "";
-
-  exams.forEach(e => {
-    const a = +e[2], b = +e[3], t = a + b * 2;
-    const attempts = results.filter(r => r[0] === e[0] && r[1] === user.roll);
-    const last = attempts.length ? attempts[attempts.length - 1][4] : null;
-    const now = new Date(), start = new Date(e[8]), end = new Date(e[9]);
-
-    if (last === "SUBMITTED") {
-      completed.innerHTML += completedCard(e, "COMPLETED", a, b, t);
-      return;
-    }
-    if (last === "RE-ENABLED") {
-      live.innerHTML += liveCard(e, a, b, t);
-      return;
-    }
-    if (!attempts.length && now >= start && now <= end) {
-      live.innerHTML += liveCard(e, a, b, t);
-      return;
-    }
-    if (now < start) {
-      upcoming.innerHTML += upcomingCard(e, start, a, b, t);
-      return;
-    }
-    completed.innerHTML += completedCard(e, "CLOSED", a, b, t);
-  });
-
-  if (!live.innerHTML) live.innerHTML = '<div class="empty">No live exams</div>';
-  if (!upcoming.innerHTML) upcoming.innerHTML = '<div class="empty">No scheduled exams</div>';
-  if (!completed.innerHTML) completed.innerHTML = '<div class="empty">No completed exams</div>';
-}
-
-/* ================= RESTORE (SAFE) ================= */
-try {
-  const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY));
-  if (cached && Array.isArray(cached.data)) {
-    render(cached.data);
-  }
-} catch(e) {
-  console.warn("Cache ignored");
-}
-
-/* ================= FETCH (AUTHORITATIVE) ================= */
+/* ===== FETCH DATA (SINGLE PATH – STABLE) ===== */
 Promise.all([
-  fetch(WEBAPP_URL,{
-    method:"POST",
-    body:new URLSearchParams({action:"getStudentExams", roll:user.roll})
-  }).then(r=>r.json()),
-  fetch(WEBAPP_URL,{
-    method:"POST",
-    body:new URLSearchParams({action:"getResults"})
-  }).then(r=>r.json())
+ fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({action:"getStudentExams",roll:user.roll})
+ }).then(r=>r.json()),
+ fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({action:"getResults"})
+ }).then(r=>r.json())
 ])
-.then(data=>{
-  sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-    time: Date.now(),
-    data: data
-  }));
-  render(data);
-})
-.catch(err=>{
-  console.error(err);
-  if (!rendered) {
-    live.innerHTML =
-    upcoming.innerHTML =
-    completed.innerHTML =
-      '<div class="empty">Unable to load exams. Please refresh.</div>';
+.then(([exams,results])=>{
+
+ live.innerHTML=""; upcoming.innerHTML=""; completed.innerHTML="";
+
+ exams.forEach(e=>{
+  const a=+e[2], b=+e[3], t=a+b*2;
+  const attempts = results.filter(r=>r[0]===e[0] && r[1]===user.roll);
+  const last = attempts.length ? attempts[attempts.length-1][4] : null;
+  const now=new Date(), start=new Date(e[8]), end=new Date(e[9]);
+
+  if(last==="SUBMITTED"){
+   completed.innerHTML+=completedCard(e,"COMPLETED",a,b,t); return;
   }
+  if(last==="RE-ENABLED"){
+   live.innerHTML+=liveCard(e,a,b,t); return;
+  }
+  if(!attempts.length && now>=start && now<=end){
+   live.innerHTML+=liveCard(e,a,b,t); return;
+  }
+  if(now<start){
+   upcoming.innerHTML+=upcomingCard(e,start,a,b,t); return;
+  }
+  completed.innerHTML+=completedCard(e,"CLOSED",a,b,t);
+ });
+
+ if(!live.innerHTML) live.innerHTML='<div class="empty">No live exams</div>';
+ if(!upcoming.innerHTML) upcoming.innerHTML='<div class="empty">No scheduled exams</div>';
+ if(!completed.innerHTML) completed.innerHTML='<div class="empty">No completed exams</div>';
+
+})
+.catch(()=>{
+ live.innerHTML =
+ upcoming.innerHTML =
+ completed.innerHTML =
+ '<div class="empty">Unable to load exams. Please refresh.</div>';
 });
 
-/* ================= NAV (UNCHANGED) ================= */
-function startExam(id){
-  sessionStorage.setItem("exam_id", id);
-  location.href="instructions.html";
+/* ===== CARD BUILDERS (UNCHANGED) ===== */
+const meta=(a,b,t)=>`
+<div class="meta">
+ <div class="row"><i class="fa-solid fa-list-check"></i> Part A (1 Mark): ${a}</div>
+ <div class="row"><i class="fa-solid fa-layer-group"></i> Part B (2 Marks): ${b}</div>
+ <div class="row total"><i class="fa-solid fa-star"></i> Total Marks: ${t}</div>
+</div>`;
+
+const liveCard=(e,a,b,t)=>`
+<div class="exam-card">
+ <div class="status-badge status-live">LIVE</div>
+ <div class="exam-info">
+  <h4>${e[1]}</h4>
+  <p>Exam ID: ${e[0]}</p>
+  ${meta(a,b,t)}
+  <button class="btn start" onclick="startExam('${e[0]}')">
+   <i class="fa-solid fa-play"></i> Start Exam
+  </button>
+ </div>
+</div>`;
+
+const upcomingCard=(e,s,a,b,t)=>`
+<div class="exam-card">
+ <div class="status-badge status-upcoming">SCHEDULED</div>
+ <div class="exam-info">
+  <h4>${e[1]}</h4>
+  <p>Exam ID: ${e[0]}</p>
+  <p>Starts: ${s.toLocaleString()}</p>
+  ${meta(a,b,t)}
+ </div>
+</div>`;
+
+function completedCard(e,msg,a,b,t){
+ return `
+ <div class="exam-card">
+  <div class="status-badge status-completed">COMPLETED</div>
+  <div class="exam-info">
+   <h4>${e[1]}</h4>
+   <p>${msg}</p>
+   ${meta(a,b,t)}
+  </div>
+  ${
+    e[7]==="YES"
+    ? `
+      <button class="btn review" onclick="viewResult('${e[0]}')">
+       <i class="fa-solid fa-chart-bar"></i> View Result
+      </button>
+      <button class="btn review" onclick="reviewExam('${e[0]}')">
+       <i class="fa-solid fa-file-lines"></i> Review Answers
+      </button>
+    `
+    : `<div class="empty" style="margin-top:14px">Review not enabled</div>`
+  }
+ </div>`;
 }
-function viewResult(id){
-  sessionStorage.setItem("exam_id", id);
-  location.href="result.html";
-}
-function reviewExam(id){
-  sessionStorage.setItem("exam_id", id);
-  location.href="review.html";
-}
-function logout(){
-  sessionStorage.removeItem(CACHE_KEY);
-  sessionStorage.clear();
-  location.href="index.html";
-}
+
+/* ===== NAV ===== */
+function startExam(id){sessionStorage.setItem("exam_id",id);location.href="instructions.html";}
+function viewResult(id){sessionStorage.setItem("exam_id",id);location.href="result.html";}
+function reviewExam(id){sessionStorage.setItem("exam_id",id);location.href="review.html";}
+function logout(){sessionStorage.clear();location.href="index.html";}
 </script>
 
 </body>

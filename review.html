@@ -146,6 +146,9 @@ img{
   <div id="overallSummary"></div>
   <div id="review"></div>
 </div>
+<div class="footer">
+    © KCET - ECE Online Examination System
+  </div>
 
 <script>
 const WEBAPP_URL =
@@ -267,9 +270,8 @@ Promise.all([
         <span class="badge ${ok?'correct':'wrong'}">
           ${s?(ok?"Correct":"Wrong"):"Not Answered"}
         </span>
-  
 
-      </div>`;
+      </div>;
 
     });
   });
@@ -278,6 +280,7 @@ Promise.all([
 });
 
 
+</script>
 
 </body>
 </html>

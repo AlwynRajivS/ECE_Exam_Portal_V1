@@ -150,14 +150,14 @@ profile.innerHTML=`
 <p>${user.year} - ${user.section}</p>
 </div>`;
 
-/* skeleton placeholders */
+/* ---------- SKELETON INIT ---------- */
 ["live","upcoming","completed"].forEach(id=>{
  document.getElementById(id).innerHTML=
   '<div class="skeleton"></div><div class="skeleton"></div>';
 });
 
-/* timeout fallback */
-const slow=setTimeout(()=>{
+/* ---------- TIMEOUT ---------- */
+const timeout=setTimeout(()=>{
  document.getElementById("progress").style.display="none";
  ["live","upcoming","completed"].forEach(id=>{
   document.getElementById(id).innerHTML=
@@ -165,46 +165,70 @@ const slow=setTimeout(()=>{
  });
 },8000);
 
-/* restore cache */
-const cached=sessionStorage.getItem("exam_cache");
-if(cached){
- render(JSON.parse(cached),true);
+/* ---------- CACHE CHECK ---------- */
+const CACHE_KEY="exam_cache_"+user.roll;
+const cached=JSON.parse(sessionStorage.getItem(CACHE_KEY)||"null");
+
+if(cached && Date.now()-cached.time < 5*60*1000){
+ render(cached.data);
 }
 
-/* fetch fresh */
+/* ---------- FETCH (AUTHORITATIVE) ---------- */
 Promise.all([
  fetch(WEBAPP_URL,{method:"POST",body:new URLSearchParams({action:"getStudentExams",roll:user.roll})}).then(r=>r.json()),
  fetch(WEBAPP_URL,{method:"POST",body:new URLSearchParams({action:"getResults"})}).then(r=>r.json())
-]).then(data=>{
- clearTimeout(slow);
- sessionStorage.setItem("exam_cache",JSON.stringify(data));
- render(data,false);
+])
+.then(data=>{
+ clearTimeout(timeout);
+ document.getElementById("progress").style.display="none";
+
+ sessionStorage.setItem(CACHE_KEY,JSON.stringify({
+   time:Date.now(),
+   data:data
+ }));
+
+ render(data);
+})
+.catch(()=>{
+ clearTimeout(timeout);
+ document.getElementById("progress").style.display="none";
+ ["live","upcoming","completed"].forEach(id=>{
+  document.getElementById(id).innerHTML=
+   '<div class="empty">Failed to load exams</div>';
+ });
 });
 
-function render([exams,results],fromCache){
- document.getElementById("progress").style.display="none";
+/* ---------- RENDER (SINGLE SOURCE OF TRUTH) ---------- */
+function render([exams,results]){
  live.innerHTML=""; upcoming.innerHTML=""; completed.innerHTML="";
 
  exams.forEach(e=>{
-  const a=+e[2],b=+e[3],t=a+b*2;
-  const at=results.filter(r=>r[0]===e[0]&&r[1]===user.roll);
-  const last=at.length?at.at(-1)[4]:null;
-  const now=new Date(),s=new Date(e[8]),en=new Date(e[9]);
+  const a=+e[2], b=+e[3], t=a+b*2;
+  const attempts=results.filter(r=>r[0]===e[0]&&r[1]===user.roll);
+  const last=attempts.length?attempts.at(-1)[4]:null;
+  const now=new Date(), start=new Date(e[8]), end=new Date(e[9]);
 
-  if(last==="SUBMITTED"){completed.innerHTML+=completedCard(e,"COMPLETED",a,b,t);return;}
-  if(last==="RE-ENABLED"||(!at.length&&now>=s&&now<=en)){live.innerHTML+=liveCard(e,a,b,t);return;}
-  if(now<s){upcoming.innerHTML+=upcomingCard(e,s,a,b,t);return;}
+  if(last==="SUBMITTED"){
+    completed.innerHTML+=completedCard(e,"COMPLETED",a,b,t);
+    return;
+  }
+  if(last==="RE-ENABLED" || (!attempts.length && now>=start && now<=end)){
+    live.innerHTML+=liveCard(e,a,b,t);
+    return;
+  }
+  if(now<start){
+    upcoming.innerHTML+=upcomingCard(e,start,a,b,t);
+    return;
+  }
   completed.innerHTML+=completedCard(e,"CLOSED",a,b,t);
  });
 
  if(!live.innerHTML)live.innerHTML='<div class="empty">No live exams</div>';
  if(!upcoming.innerHTML)upcoming.innerHTML='<div class="empty">No scheduled exams</div>';
  if(!completed.innerHTML)completed.innerHTML='<div class="empty">No completed exams</div>';
-
- document.querySelectorAll(".exam-card").forEach(c=>c.classList.add("fade-in"));
 }
 
-/* EXISTING CARD BUILDERS (UNCHANGED) */
+/* ---------- EXISTING FUNCTIONS (UNCHANGED) ---------- */
 const meta=(a,b,t)=>`
 <div class="meta">
  <div class="row"><i class="fa-solid fa-list-check"></i> Part A (1 Mark): ${a}</div>
@@ -248,12 +272,17 @@ function completedCard(e,msg,a,b,t){
  </div>`;
 }
 
-/* NAV */
+/* ---------- NAV ---------- */
 function startExam(id){sessionStorage.setItem("exam_id",id);location.href="instructions.html";}
 function viewResult(id){sessionStorage.setItem("exam_id",id);location.href="result.html";}
 function reviewExam(id){sessionStorage.setItem("exam_id",id);location.href="review.html";}
-function logout(){sessionStorage.clear();location.href="index.html";}
+function logout(){
+ sessionStorage.removeItem(CACHE_KEY);
+ sessionStorage.clear();
+ location.href="index.html";
+}
 </script>
+
 
 </body>
 </html>

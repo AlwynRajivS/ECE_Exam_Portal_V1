@@ -139,30 +139,24 @@ header{
 </div>
 
 <script>
-const WEBAPP_URL="https://script.google.com/macros/s/AKfycbzQAZuTBNRUdr86h0xC3C_KSj5M7-AC4ObFlMeGov_j9na-iOnmaCFMJqrauw1ad0Ra/exec";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzQAZuTBNRUdr86h0xC3C_KSj5M7-AC4ObFlMeGov_j9na-iOnmaCFMJqrauw1ad0Ra/exec";
 const user = JSON.parse(sessionStorage.getItem("user"));
 const CACHE_KEY = "exam_cache_" + user.roll;
+
+let rendered = false;   // 🔐 critical flag
 
 /* ================= PROFILE ================= */
 profile.innerHTML = `
 <i class="fa-solid fa-circle-user"></i>
 <div>
-<h3>${user.name}</h3>
-<p>${user.roll} | ${user.dept}</p>
-<p>${user.year} - ${user.section}</p>
+  <h3>${user.name}</h3>
+  <p>${user.roll} | ${user.dept}</p>
+  <p>${user.year} - ${user.section}</p>
 </div>`;
-
-/* ================= TIMEOUT (SAFE) ================= */
-let timeoutTriggered = false;
-const timeout = setTimeout(() => {
-  timeoutTriggered = true;
-  live.innerHTML = upcoming.innerHTML = completed.innerHTML =
-    '<div class="empty">Network is slow. Please refresh.</div>';
-}, 10000);
 
 /* ================= RENDER FUNCTION (UNCHANGED LOGIC) ================= */
 function render([exams, results]) {
-  clearTimeout(timeout);
+  rendered = true;
 
   live.innerHTML = "";
   upcoming.innerHTML = "";
@@ -198,13 +192,13 @@ function render([exams, results]) {
   if (!completed.innerHTML) completed.innerHTML = '<div class="empty">No completed exams</div>';
 }
 
-/* ================= CACHE (SAFE RESTORE) ================= */
+/* ================= RESTORE FROM CACHE (INSTANT) ================= */
 const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "null");
-if (cached && Date.now() - cached.time < 5 * 60 * 1000) {
-  render(cached.data);   // temporary restore
+if (cached && Array.isArray(cached.data)) {
+  render(cached.data);        // ⚡ instant restore
 }
 
-/* ================= FETCH (AUTHORITATIVE) ================= */
+/* ================= FETCH FROM BACKEND (AUTHORITATIVE) ================= */
 Promise.all([
   fetch(WEBAPP_URL, {
     method: "POST",
@@ -221,12 +215,17 @@ Promise.all([
     time: Date.now(),
     data: data
   }));
-  render(data);   // final render (backend truth)
+  render(data);               // 🔁 overwrite with fresh data
 })
-.catch(() => {
-  if (!timeoutTriggered) {
-    live.innerHTML = upcoming.innerHTML = completed.innerHTML =
-      '<div class="empty">Failed to load exams</div>';
+.catch(err => {
+  console.warn("Fetch failed:", err);
+
+  // ❗ show error ONLY if nothing rendered at all
+  if (!rendered) {
+    live.innerHTML =
+    upcoming.innerHTML =
+    completed.innerHTML =
+      '<div class="empty">Unable to load exams. Please refresh.</div>';
   }
 });
 
@@ -249,7 +248,6 @@ function logout(){
   location.href = "index.html";
 }
 </script>
-
 
 </body>
 </html>

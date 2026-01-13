@@ -18,11 +18,10 @@ body.dark{
   --text:#e0e0e0;
   --primary:#90caf9;
 }
-
 body{
+  margin:0;
   font-family:'Segoe UI',system-ui;
   background:var(--bg);
-  margin:0;
   color:var(--text);
 }
 
@@ -42,7 +41,7 @@ header{
   font-size:14px;
 }
 
-/* TOP ACTION BAR */
+/* ACTIONS */
 .actions{
   display:flex;
   justify-content:center;
@@ -55,8 +54,8 @@ header{
   color:#fff;
   padding:8px 14px;
   border-radius:20px;
-  cursor:pointer;
   font-size:13px;
+  cursor:pointer;
 }
 
 /* TABS */
@@ -64,7 +63,7 @@ header{
   display:flex;
   justify-content:center;
   gap:10px;
-  margin:10px;
+  margin-bottom:10px;
 }
 .tab{
   padding:8px 16px;
@@ -78,12 +77,8 @@ header{
   color:#fff;
 }
 
-/* CONTENT */
-.container{
-  max-width:900px;
-  margin:auto;
-  padding:15px;
-}
+/* SECTIONS */
+.container{max-width:900px;margin:auto;padding:15px}
 .section{display:none}
 .section.active{display:block}
 
@@ -121,7 +116,7 @@ header{
 .wrong{color:#c62828;font-weight:600}
 
 /* LOADING */
-.loading{
+#loading{
   text-align:center;
   padding:30px;
 }
@@ -135,7 +130,8 @@ header{
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 .progress{
-  width:80%;height:8px;
+  width:80%;
+  height:8px;
   background:#ddd;
   border-radius:10px;
   margin:15px auto;
@@ -167,12 +163,12 @@ header{
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('overall')">Overall</div>
-  <div class="tab" onclick="showTab('A')">Part A</div>
-  <div class="tab" onclick="showTab('B')">Part B</div>
+  <div class="tab active" onclick="showTab('overall',this)">Overall</div>
+  <div class="tab" onclick="showTab('A',this)">Part A</div>
+  <div class="tab" onclick="showTab('B',this)">Part B</div>
 </div>
 
-<div id="loading" class="loading">
+<div id="loading">
   <div class="spinner"></div>
   <div id="loadText">Loading… 0%</div>
   <div class="progress"><div class="bar" id="bar"></div></div>
@@ -193,36 +189,73 @@ function toggleDark(){
 }
 
 /* TABS */
-function showTab(id){
+function showTab(id,el){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
   document.getElementById(id==="overall"?"overall":id==="A"?"partA":"partB").classList.add('active');
-  event.target.classList.add('active');
 }
 
-/* MOCK DATA FLOW (your existing logic plugs here) */
+/* BACKEND */
+const WEBAPP_URL="https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
+
+const exam_id=sessionStorage.getItem("exam_id");
+const user=JSON.parse(sessionStorage.getItem("user"));
+document.getElementById("studentInfo").innerHTML=
+`👨‍🎓 ${user.name} | 🆔 ${user.roll} | 📝 Exam ID: ${exam_id}`;
+
 const bar=document.getElementById("bar");
 const txt=document.getElementById("loadText");
 const setP=p=>{bar.style.width=p+"%";txt.innerText="Loading… "+p+"%"};
 
-setP(20);
-setTimeout(()=>setP(60),500);
-setTimeout(()=>{
-  setP(100);
-  document.getElementById("loading").style.display="none";
+setP(10);
+
+/* FETCH DATA */
+Promise.all([
+  fetch(WEBAPP_URL,{method:"POST",body:new URLSearchParams({action:"getQuestions",exam_id})})
+    .then(r=>{setP(40);return r.json();}),
+  fetch(WEBAPP_URL,{method:"POST",body:new URLSearchParams({action:"getResponses",exam_id,roll_no:user.roll})})
+    .then(r=>{setP(70);return r.json();})
+])
+.then(([questions,responses])=>{
+  const answers=JSON.parse(responses[0][2]);
+  const ids=responses[0][3].split(",").map(x=>x.trim());
+  const filtered=questions.filter(q=>ids.includes(String(q[2]).trim()));
+
+  let OC=0,OW=0,ONA=0,OQ=0;
+  filtered.forEach(q=>{
+    const s=answers[q[2]]||"",c=q[8];
+    OQ++; if(!s)ONA++; else if(s===c)OC++; else OW++;
+  });
 
   document.getElementById("overall").innerHTML=`
   <div class="summary">
-    <div class="summary-box"><strong>50</strong><br>Total</div>
-    <div class="summary-box"><strong>42</strong><br>Correct</div>
-    <div class="summary-box"><strong>8</strong><br>Wrong</div>
+    <div class="summary-box"><strong>${OQ}</strong><br>Total</div>
+    <div class="summary-box"><strong>${OC}</strong><br>Correct</div>
+    <div class="summary-box"><strong>${OW}</strong><br>Wrong</div>
+    <div class="summary-box"><strong>${ONA}</strong><br>NA</div>
   </div>`;
 
-  document.getElementById("partA").innerHTML=`
-  <div class="card fade-in">Part A – Question review here</div>`;
-  document.getElementById("partB").innerHTML=`
-  <div class="card fade-in">Part B – Question review here</div>`;
-},1000);
+  filtered.forEach((q,i)=>{
+    const s=answers[q[2]]||"",ck=q[8];
+    const opt={A:q[4],B:q[5],C:q[6],D:q[7]};
+    const ok=s===ck;
+    const card=`
+    <div class="card fade-in">
+      <div><strong>Q${i+1}.</strong> ${q[3]}</div>
+      <div>Your Answer:
+        <span class="${ok?'correct':'wrong'}">${s?opt[s]:"Not Answered"}</span>
+      </div>
+      <div>Correct Answer:
+        <span class="correct">${opt[ck]}</span>
+      </div>
+    </div>`;
+    (q[1]==="PART A"?partA:partB).innerHTML+=card;
+  });
+
+  setP(100);
+  document.getElementById("loading").style.display="none";
+});
 </script>
 
 </body>

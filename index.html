@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <!-- ===== Open Graph for WhatsApp / Social Preview ===== -->
@@ -7,126 +7,182 @@
 <meta property="og:image" content="image1.png">
 <meta property="og:url" content="https://tinyurl.com/EC-ASS">
 <meta property="og:type" content="website">
-
-<!-- Optional but recommended -->
 <meta name="twitter:card" content="summary_large_image">
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!--<title>KCET - ECE Online Assessment Login</title> -->
 
 <style>
 /* ================= GLOBAL ================= */
 * {
   box-sizing: border-box;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
 body {
   margin: 0;
   height: 100vh;
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  overflow: hidden;
+  background: radial-gradient(circle at top, #2a5298, #0f2027);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* ================= ANIMATED BACKGROUND ================= */
+body::before,
+body::after {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.5;
+  animation: float 12s infinite alternate ease-in-out;
+}
+
+body::after {
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+  animation-delay: 4s;
+}
+
+@keyframes float {
+  from { transform: translate(-80px, -60px); }
+  to { transform: translate(120px, 100px); }
+}
+
 /* ================= CARD ================= */
 .login-card {
   width: 100%;
-  max-width: 380px;
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 30px 25px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-  animation: fadeIn 0.6s ease-in-out;
+  max-width: 400px;
+  padding: 35px 28px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.4);
+  animation: cardEnter 0.8s ease;
+  position: relative;
+  z-index: 2;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* ================= HEADER ================= */
 .login-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 .login-header h2 {
   margin: 0;
-  color: #2a5298;
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .login-header p {
-  margin: 5px 0 0;
-  color: #666;
+  margin-top: 6px;
+  color: #555;
   font-size: 14px;
+  letter-spacing: 0.3px;
 }
 
 /* ================= INPUT ================= */
 .input-group {
-  margin-top: 15px;
+  margin-top: 18px;
 }
 
 .input-group label {
   font-size: 13px;
-  color: #555;
+  color: #444;
+  font-weight: 600;
 }
 
 .input-group input {
   width: 100%;
-  padding: 12px;
+  padding: 13px;
   margin-top: 6px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid #ccc;
   font-size: 15px;
+  background: #f9fbff;
+  transition: 0.3s;
 }
 
 .input-group input:focus {
   outline: none;
   border-color: #2a5298;
+  box-shadow: 0 0 0 3px rgba(42,82,152,0.15);
+  background: #fff;
 }
 
 /* ================= BUTTON ================= */
 .login-btn {
   width: 100%;
-  padding: 12px;
-  margin-top: 25px;
-  background: linear-gradient(135deg, #2a5298, #1e3c72);
-  color: white;
+  padding: 14px;
+  margin-top: 28px;
+  border-radius: 12px;
   border: none;
-  border-radius: 10px;
   font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #2a5298, #1e3c72);
   cursor: pointer;
   transition: 0.3s;
+  box-shadow: 0 10px 25px rgba(42,82,152,0.35);
 }
 
 .login-btn:hover {
-  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(42,82,152,0.45);
 }
 
-/* ================= FOOTER ================= */
-.footer {
-  text-align: center;
-  margin-top: 18px;
-  font-size: 12px;
-  color: #777;
+.login-btn:active {
+  transform: scale(0.98);
 }
 
 /* ================= LOADER ================= */
 .loader {
   display: none;
+  margin-top: 15px;
   text-align: center;
-  margin-top: 10px;
+  font-size: 14px;
   color: #2a5298;
+  animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+/* ================= FOOTER ================= */
+.footer {
+  text-align: center;
+  margin-top: 22px;
+  font-size: 12px;
+  color: #666;
 }
 
 /* ================= MOBILE ================= */
 @media (max-width: 480px) {
   .login-card {
     margin: 10px;
-    padding: 25px 20px;
+    padding: 28px 22px;
   }
 }
 </style>
@@ -137,7 +193,7 @@ body {
 <div class="login-card">
   <div class="login-header">
     <h2>KCET - Department of ECE</h2>
-<h2>Online Assessment Portal</h2>
+    <h2>Online Assessment Portal</h2>
     <p>Student Login</p>
   </div>
 
@@ -161,10 +217,8 @@ body {
 </div>
 
 <script>
-/* ================= CONFIG ================= */
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
 
-/* ================= LOGIN FUNCTION ================= */
 function login() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
@@ -189,15 +243,10 @@ function login() {
     document.getElementById("loader").style.display = "none";
 
     if (data.ok) {
-      // Store session
       sessionStorage.setItem("user", JSON.stringify(data));
-
-      // Redirect based on role
-      if (data.role === "admin") {
-        window.location.href = "admin.html";
-      } else {
-        window.location.href = "student_dashboard.html";
-      }
+      window.location.href = data.role === "admin"
+        ? "admin.html"
+        : "student_dashboard.html";
     } else {
       alert("Invalid login credentials");
     }

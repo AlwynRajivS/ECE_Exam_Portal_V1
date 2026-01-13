@@ -155,7 +155,14 @@ const WEBAPP_URL =
 "https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
 
 const exam_id = sessionStorage.getItem("exam_id");
-const user = JSON.parse(sessionStorage.getItem("user"));
+const userRaw = sessionStorage.getItem("user");
+
+if (!exam_id || !userRaw) {
+  alert("Session expired. Please login again.");
+  window.location.href = "index.html";
+}
+
+const user = JSON.parse(userRaw);
 
 document.getElementById("studentInfo").innerHTML =
 `👨‍🎓 ${user.name} | 🆔 ${user.roll} | 📝 Exam ID: ${exam_id}`;
@@ -177,7 +184,11 @@ Promise.all([
 ])
 .then(([questions, responses])=>{
 
-  if(!responses.length) return;
+  if(!responses || !responses.length){
+    document.getElementById("review").innerHTML =
+      "<p style='text-align:center'>No responses found.</p>";
+    return;
+  }
 
   const answers = JSON.parse(responses[0][2]);
   const assignedQids = responses[0][3].split(",").map(q=>q.trim());
@@ -186,7 +197,7 @@ Promise.all([
     assignedQids.includes(String(q[2]).trim())
   );
 
-  /* ===== OVERALL CALCULATION ===== */
+  /* ===== OVERALL ===== */
   let OQ=0, OC=0, OW=0, ONA=0, OM=0, OTM=0;
 
   filtered.forEach(q=>{
@@ -270,21 +281,17 @@ Promise.all([
         <span class="badge ${ok?'correct':'wrong'}">
           ${s?(ok?"Correct":"Wrong"):"Not Answered"}
         </span>
-
-<div class="footer">
-    © KCET - ECE Online Examination System
-  </div>
-
-      </div>';
-
+      </div>`;
     });
   });
 
-
 })
-
-
+.catch(err=>{
+  console.error(err);
+  alert("Failed to load review. Check internet connection.");
+});
 </script>
+
 
 </body>
 </html>

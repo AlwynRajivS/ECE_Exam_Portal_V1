@@ -140,10 +140,15 @@ header{
 
 <script>
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzQAZuTBNRUdr86h0xC3C_KSj5M7-AC4ObFlMeGov_j9na-iOnmaCFMJqrauw1ad0Ra/exec";
-const user = JSON.parse(sessionStorage.getItem("user"));
-const CACHE_KEY = "exam_cache_" + user.roll;
 
-let rendered = false;   // 🔐 critical flag
+/* ================= USER GUARD (CRITICAL) ================= */
+const userRaw = sessionStorage.getItem("user");
+if (!userRaw) {
+  alert("Session expired. Please login again.");
+  location.href = "index.html";
+  throw new Error("User session missing");
+}
+const user = JSON.parse(userRaw);
 
 /* ================= PROFILE ================= */
 profile.innerHTML = `
@@ -154,7 +159,11 @@ profile.innerHTML = `
   <p>${user.year} - ${user.section}</p>
 </div>`;
 
-/* ================= RENDER FUNCTION (UNCHANGED LOGIC) ================= */
+/* ================= CACHE ================= */
+const CACHE_KEY = "exam_cache_" + user.roll;
+let rendered = false;
+
+/* ================= RENDER (UNCHANGED LOGIC) ================= */
 function render([exams, results]) {
   rendered = true;
 
@@ -192,35 +201,36 @@ function render([exams, results]) {
   if (!completed.innerHTML) completed.innerHTML = '<div class="empty">No completed exams</div>';
 }
 
-/* ================= RESTORE FROM CACHE (INSTANT) ================= */
-const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "null");
-if (cached && Array.isArray(cached.data)) {
-  render(cached.data);        // ⚡ instant restore
+/* ================= RESTORE (SAFE) ================= */
+try {
+  const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY));
+  if (cached && Array.isArray(cached.data)) {
+    render(cached.data);
+  }
+} catch(e) {
+  console.warn("Cache ignored");
 }
 
-/* ================= FETCH FROM BACKEND (AUTHORITATIVE) ================= */
+/* ================= FETCH (AUTHORITATIVE) ================= */
 Promise.all([
-  fetch(WEBAPP_URL, {
-    method: "POST",
-    body: new URLSearchParams({ action: "getStudentExams", roll: user.roll })
-  }).then(r => r.json()),
-
-  fetch(WEBAPP_URL, {
-    method: "POST",
-    body: new URLSearchParams({ action: "getResults" })
-  }).then(r => r.json())
+  fetch(WEBAPP_URL,{
+    method:"POST",
+    body:new URLSearchParams({action:"getStudentExams", roll:user.roll})
+  }).then(r=>r.json()),
+  fetch(WEBAPP_URL,{
+    method:"POST",
+    body:new URLSearchParams({action:"getResults"})
+  }).then(r=>r.json())
 ])
-.then(data => {
+.then(data=>{
   sessionStorage.setItem(CACHE_KEY, JSON.stringify({
     time: Date.now(),
     data: data
   }));
-  render(data);               // 🔁 overwrite with fresh data
+  render(data);
 })
-.catch(err => {
-  console.warn("Fetch failed:", err);
-
-  // ❗ show error ONLY if nothing rendered at all
+.catch(err=>{
+  console.error(err);
   if (!rendered) {
     live.innerHTML =
     upcoming.innerHTML =
@@ -232,20 +242,20 @@ Promise.all([
 /* ================= NAV (UNCHANGED) ================= */
 function startExam(id){
   sessionStorage.setItem("exam_id", id);
-  location.href = "instructions.html";
+  location.href="instructions.html";
 }
 function viewResult(id){
   sessionStorage.setItem("exam_id", id);
-  location.href = "result.html";
+  location.href="result.html";
 }
 function reviewExam(id){
   sessionStorage.setItem("exam_id", id);
-  location.href = "review.html";
+  location.href="review.html";
 }
 function logout(){
   sessionStorage.removeItem(CACHE_KEY);
   sessionStorage.clear();
-  location.href = "index.html";
+  location.href="index.html";
 }
 </script>
 

@@ -347,6 +347,58 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
   transform:translateY(2px);
   box-shadow:0 1px 0 #000;
 }
+/* ============ COMPACT MOBILE CASIO MODE ============ */
+@media (max-width:600px){
+
+  .calculator{
+    width:260px;               /* compact width */
+    right:10px;
+    bottom:10px;
+    padding:10px;
+    border-radius:16px;
+  }
+
+  /* CASIO HEADER */
+  .casio-head{
+    font-size:12px;
+    margin-bottom:6px;
+  }
+
+  /* LCD SCREEN */
+  .casio-screen{
+    padding:6px;
+    margin-bottom:8px;
+  }
+
+  .casio-screen input{
+    font-size:18px;            /* smaller digits */
+  }
+
+  .casio-screen .mode{
+    font-size:10px;
+  }
+
+  /* BUTTON GRID */
+  .casio-grid{
+    gap:6px;
+  }
+
+  .casio-grid button{
+    padding:9px;               /* compact keys */
+    font-size:12px;
+    border-radius:6px;
+  }
+
+  /* SHIFT key highlight */
+  .casio-grid button.shift{
+    font-size:11px;
+  }
+
+  /* EQUAL key */
+  .casio-grid button.eq{
+    font-size:14px;
+  }
+}
 
 </style>
 </head>

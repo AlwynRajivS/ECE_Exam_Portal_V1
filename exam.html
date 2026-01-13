@@ -646,7 +646,10 @@ function confirmSubmit(){modal.style.display="flex"}
 function closeModal(){modal.style.display="none"}
 
 function submitExam(){
-  isSubmitting = true;   // ✅ critical
+if (isSubmitting) return;   // 🔒 HARD STOP
+  isSubmitting = true;
+
+  clearInterval(timerRef);   // ⛔ STOP
 
  const finalAnswers={};
 questions.forEach((q, i) => {

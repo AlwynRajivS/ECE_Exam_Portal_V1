@@ -10,142 +10,89 @@
 
 <style>
 :root{
-  --blue:#0d47a1;
-  --blue2:#1976d2;
-  --green:#2e7d32;
-  --orange:#ef6c00;
-  --gray:#546e7a;
-  --bg:#eef2f7;
+  --blue:#0d47a1; --blue2:#1976d2;
+  --green:#2e7d32; --orange:#ef6c00;
+  --gray:#546e7a; --bg:#eef2f7;
 }
 *{box-sizing:border-box;font-family:'Segoe UI',system-ui}
 body{margin:0;background:var(--bg)}
 
 header{
   background:linear-gradient(135deg,var(--blue),var(--blue2));
-  color:#fff;
-  padding:22px 16px;
-  text-align:center;
-  font-size:22px;
-  font-weight:600;
+  color:#fff;padding:22px 16px;text-align:center;
+  font-size:22px;font-weight:600;
   position:sticky;top:0;z-index:20;
   box-shadow:0 8px 24px rgba(0,0,0,.35);
 }
 .container{max-width:1200px;margin:auto;padding:20px}
 
-/* ================= FOOTER ================= */
-.footer {
-  text-align: center;
-  margin-top: 18px;
-  font-size: 12px;
-  color: #777;
-}
+/* FOOTER */
+.footer{text-align:center;margin-top:18px;font-size:12px;color:#777}
 
 /* PROFILE */
 .profile{
-  background:#fff;
-  border-radius:26px;
-  padding:24px;
-  display:flex;
-  gap:18px;
+  background:#fff;border-radius:26px;padding:24px;
+  display:flex;gap:18px;
   box-shadow:0 16px 40px rgba(0,0,0,.18);
   margin-bottom:36px;
 }
 .profile i{font-size:66px;color:var(--blue)}
 
 /* SECTION */
-.section{margin-bottom:40px}
+.section{margin-bottom:40px;display:none}
 .section-title{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-size:20px;
-  color:var(--blue);
+  display:flex;align-items:center;gap:8px;
+  font-size:20px;color:var(--blue)
 }
 
 /* CARD */
 .exam-card{
-  background:#fff;
-  border-radius:30px;
-  padding:30px 26px 26px;
-  margin-bottom:24px;
+  background:#fff;border-radius:30px;
+  padding:30px 26px 26px;margin-bottom:24px;
   box-shadow:0 20px 44px rgba(0,0,0,.18);
-  position:relative;
-  text-align:center;
+  position:relative;text-align:center;
+  animation:fadeUp .5s ease both;
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:none}
 }
 
-/* STATUS BADGE (FIXED – NO OVERLAP) */
+/* STATUS */
 .status-badge{
-  position:absolute;
-  top:18px;
-  right:18px;
-  padding:6px 14px;
-  font-size:12px;
-  font-weight:700;
-  color:#fff;
-  border-radius:20px;
+  position:absolute;top:18px;right:18px;
+  padding:6px 14px;font-size:12px;
+  font-weight:700;color:#fff;border-radius:20px;
 }
-.status-live{background:#2e7d32}
+.status-live{background:#2e7d32;animation:pulse 2.4s infinite}
 .status-upcoming{background:#ef6c00}
 .status-completed{background:#546e7a}
 
-/* LIVE PULSE */
 @keyframes pulse{
   0%{box-shadow:0 0 0 rgba(46,125,50,.4)}
   50%{box-shadow:0 0 22px rgba(46,125,50,.7)}
   100%{box-shadow:0 0 0 rgba(46,125,50,.4)}
 }
-.status-live{animation:pulse 2.4s infinite}
-
-/* INFO */
-.exam-info h4{
-  margin:14px 0 6px;
-  font-size:22px;
-  color:var(--blue);
-}
-.exam-info p{margin:4px 0;color:#666}
 
 /* META */
 .meta{
-  margin:18px auto;
-  padding:18px;
-  border-radius:20px;
-  background:#e3f2fd;
-  width:100%;
-  max-width:420px;
-  text-align:left;
+  margin:18px auto;padding:18px;
+  border-radius:20px;background:#e3f2fd;
+  max-width:420px;text-align:left;
 }
-.meta .row{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin:8px 0;
-  font-weight:600;
-  color:#0d47a1;
-}
-.meta .row i{color:#1976d2}
+.meta .row{display:flex;gap:10px;margin:8px 0;font-weight:600;color:#0d47a1}
 .meta .total{
-  margin-top:10px;
-  padding-top:10px;
+  margin-top:10px;padding-top:10px;
   border-top:2px dashed #90caf9;
-  font-size:18px;
-  font-weight:800;
-  color:#2e7d32;
+  font-size:18px;font-weight:800;color:#2e7d32;
 }
 
 /* BUTTONS */
 .btn{
-  padding:16px;
-  border:none;
-  border-radius:30px;
-  font-size:16px;
-  cursor:pointer;
-  color:#fff;
-  display:flex;
-  gap:10px;
-  align-items:center;
-  justify-content:center;
-  width:100%;
-  margin-top:14px;
+  padding:16px;border:none;border-radius:30px;
+  font-size:16px;cursor:pointer;color:#fff;
+  display:flex;gap:10px;align-items:center;
+  justify-content:center;width:100%;margin-top:14px;
 }
 .start{background:#2e7d32}
 .review{background:#1976d2}
@@ -153,18 +100,40 @@ header{
 
 /* EMPTY */
 .empty{
-  background:#fff;
-  padding:26px;
-  border-radius:26px;
-  text-align:center;
-  color:#777;
+  background:#fff;padding:26px;border-radius:26px;
+  text-align:center;color:#777;
   box-shadow:0 10px 22px rgba(0,0,0,.14);
+}
+
+/* ===== LOADING UX ===== */
+#loading{margin-bottom:30px}
+.progress-wrap{
+  height:6px;background:#cfd8dc;border-radius:6px;
+  overflow:hidden;margin-bottom:18px;
+}
+#progress{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,#1976d2,#2e7d32);
+  transition:width .4s ease;
+}
+.skeleton-card{
+  background:#fff;border-radius:26px;
+  height:220px;margin-bottom:20px;
+  position:relative;overflow:hidden;
+}
+.skeleton-card::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 37%,#f0f0f0 63%);
+  animation:shimmer 1.4s infinite;
+}
+@keyframes shimmer{
+  0%{transform:translateX(-100%)}
+  100%{transform:translateX(100%)}
 }
 
 /* MOBILE */
 @media(max-width:600px){
   .profile{flex-direction:column;text-align:center}
-  .exam-card{padding:24px}
 }
 </style>
 </head>
@@ -180,28 +149,34 @@ header{
 
 <div class="profile" id="profile"></div>
 
-<div class="section">
+<!-- LOADING -->
+<div id="loading">
+ <div class="progress-wrap"><div id="progress"></div></div>
+ <div class="skeleton-card"></div>
+ <div class="skeleton-card"></div>
+ <div class="skeleton-card"></div>
+</div>
+
+<div class="section" id="liveSection">
  <h3 class="section-title"><i class="fa-solid fa-bolt"></i> Live Exams</h3>
- <div id="live" class="empty">No live exams</div>
+ <div id="live" class="empty"></div>
 </div>
 
-<div class="section">
+<div class="section" id="upcomingSection">
  <h3 class="section-title"><i class="fa-solid fa-calendar"></i> Scheduled Exams</h3>
- <div id="upcoming" class="empty">No scheduled exams</div>
+ <div id="upcoming" class="empty"></div>
 </div>
 
-<div class="section">
+<div class="section" id="completedSection">
  <h3 class="section-title"><i class="fa-solid fa-check"></i> Completed Exams</h3>
- <div id="completed" class="empty">No completed exams</div>
+ <div id="completed" class="empty"></div>
 </div>
 
 <button class="btn logout" onclick="logout()">
  <i class="fa-solid fa-right-from-bracket"></i> Logout
 </button>
 
-  <div class="footer">
-    © KCET - ECE Online Examination System
-  </div>
+<div class="footer">© KCET - ECE Online Examination System</div>
 </div>
 
 <script>
@@ -216,101 +191,98 @@ profile.innerHTML=`
 <p>${user.year} - ${user.section}</p>
 </div>`;
 
-Promise.all([
- fetch(WEBAPP_URL,{method:"POST",body:new URLSearchParams({action:"getStudentExams",roll:user.roll})}).then(r=>r.json()),
- fetch(WEBAPP_URL,{method:"POST",body:new URLSearchParams({action:"getResults"})}).then(r=>r.json())
-]).then(([exams,results])=>{
+/* ===== PROGRESS ===== */
+let p=10;
+const bar=document.getElementById("progress");
+const progTimer=setInterval(()=>{
+ p=Math.min(p+Math.random()*15,90);
+ bar.style.width=p+"%";
+},400);
 
- live.innerHTML=""; upcoming.innerHTML=""; completed.innerHTML="";
+/* ===== FETCH WITH TIMEOUT ===== */
+const fetchWithTimeout=(data,t=8000)=>Promise.race([
+ fetch(WEBAPP_URL,{method:"POST",body:data}).then(r=>r.json()),
+ new Promise((_,rej)=>setTimeout(()=>rej("timeout"),t))
+]);
+
+/* ===== CACHE ===== */
+const cE=sessionStorage.getItem("cached_exams");
+const cR=sessionStorage.getItem("cached_results");
+if(cE&&cR){renderExams(JSON.parse(cE),JSON.parse(cR));}
+
+Promise.all([
+ fetchWithTimeout(new URLSearchParams({action:"getStudentExams",roll:user.roll})),
+ fetchWithTimeout(new URLSearchParams({action:"getResults"}))
+])
+.then(([exams,results])=>{
+ sessionStorage.setItem("cached_exams",JSON.stringify(exams));
+ sessionStorage.setItem("cached_results",JSON.stringify(results));
+ renderExams(exams,results);
+})
+.catch(()=>{
+ loading.innerHTML='<div class="empty"><i class="fa-solid fa-wifi"></i><br>Network slow. Please refresh.</div>';
+});
+
+function renderExams(exams,results){
+ clearInterval(progTimer);
+ bar.style.width="100%";
+ setTimeout(()=>loading.style.display="none",300);
+
+ liveSection.style.display=upcomingSection.style.display=completedSection.style.display="block";
+ live.innerHTML=upcoming.innerHTML=completed.innerHTML="";
 
  exams.forEach(e=>{
-  const a=+e[2], b=+e[3], t=a+b*2;
-  const attempts=results.filter(r=>r[0]===e[0]&&r[1]===user.roll);
-  const last=attempts.length?attempts[attempts.length-1][4]:null;
-  const now=new Date(), start=new Date(e[8]), end=new Date(e[9]);
+  const a=+e[2],b=+e[3],t=a+b*2;
+  const at=results.filter(r=>r[0]===e[0]&&r[1]===user.roll);
+  const last=at.length?at[at.length-1][4]:null;
+  const now=new Date(),s=new Date(e[8]),en=new Date(e[9]);
 
   if(last==="SUBMITTED"){completed.innerHTML+=completedCard(e,"COMPLETED",a,b,t);return;}
-  if(last==="RE-ENABLED"){live.innerHTML+=liveCard(e,a,b,t);return;}
-  if(!attempts.length&&now>=start&&now<=end){live.innerHTML+=liveCard(e,a,b,t);return;}
-  if(now<start){upcoming.innerHTML+=upcomingCard(e,start,a,b,t);return;}
+  if(last==="RE-ENABLED"||(now>=s&&now<=en&&!at.length)){live.innerHTML+=liveCard(e,a,b,t);return;}
+  if(now<s){upcoming.innerHTML+=upcomingCard(e,s,a,b,t);return;}
   completed.innerHTML+=completedCard(e,"CLOSED",a,b,t);
  });
 
  if(!live.innerHTML)live.innerHTML='<div class="empty">No live exams</div>';
  if(!upcoming.innerHTML)upcoming.innerHTML='<div class="empty">No scheduled exams</div>';
  if(!completed.innerHTML)completed.innerHTML='<div class="empty">No completed exams</div>';
-});
+}
 
+/* ===== TEMPLATES ===== */
 const meta=(a,b,t)=>`
 <div class="meta">
- <div class="row"><i class="fa-solid fa-list-check"></i> Part A (1 Mark): ${a}</div>
- <div class="row"><i class="fa-solid fa-layer-group"></i> Part B (2 Marks): ${b}</div>
- <div class="row total"><i class="fa-solid fa-star"></i> Total Marks: ${t}</div>
+ <div class="row"><i class="fa-solid fa-list-check"></i> Part A: ${a}</div>
+ <div class="row"><i class="fa-solid fa-layer-group"></i> Part B: ${b}</div>
+ <div class="row total"><i class="fa-solid fa-star"></i> Total: ${t}</div>
 </div>`;
 
 const liveCard=(e,a,b,t)=>`
 <div class="exam-card">
  <div class="status-badge status-live">LIVE</div>
- <div class="exam-info">
-  <h4>${e[1]}</h4>
-  <p>Exam ID: ${e[0]}</p>
-  ${meta(a,b,t)}
-  <button class="btn start" onclick="startExam('${e[0]}')">
-   <i class="fa-solid fa-play"></i> Start Exam
-  </button>
-  <div class="footer">
-    © KCET - ECE Online Examination System
-  </div>
-
- </div>
+ <h4>${e[1]}</h4><p>Exam ID: ${e[0]}</p>
+ ${meta(a,b,t)}
+ <button class="btn start" onclick="startExam('${e[0]}')">
+  <i class="fa-solid fa-play"></i> Start Exam
+ </button>
 </div>`;
 
 const upcomingCard=(e,s,a,b,t)=>`
 <div class="exam-card">
  <div class="status-badge status-upcoming">SCHEDULED</div>
- <div class="exam-info">
-  <h4>${e[1]}</h4>
-  <p>Exam ID: ${e[0]}</p>
-  <p>Starts: ${s.toLocaleString()}</p>
-  ${meta(a,b,t)}
- </div>
+ <h4>${e[1]}</h4><p>Exam ID: ${e[0]}</p>
+ <p>Starts: ${s.toLocaleString()}</p>
+ ${meta(a,b,t)}
 </div>`;
 
 function completedCard(e,msg,a,b,t){
  return `
- <div class="exam-card">
-  <div class="status-badge status-completed">COMPLETED</div>
-
-  <div class="exam-info">
-   <h4>${e[1]}</h4>
-  <p>Exam ID: ${e[0]}</p>
-   <p>${msg}</p>
-   ${meta(a,b,t)}
-  </div>
-
-  ${
-    e[7] === "YES"
-    ? `
-      <button class="btn review" onclick="viewResult('${e[0]}')">
-        <i class="fa-solid fa-chart-bar"></i> View Result
-      </button>
-      <button class="btn review" onclick="reviewExam('${e[0]}')">
-        <i class="fa-solid fa-file-lines"></i> Review Answers
-      </button>
-    `
-    : `<div class="empty" style="margin-top:14px">Review not enabled</div>`
-  }
-
- </div>`;
-}
-
-
-
-
+<div class="exam-card">
+ <div class="status-badge status-completed">COMPLETED</div>
+ <h4>${e[1]}</h4><p>Exam ID: ${e[0]}</p><p>${msg}</p>
+ ${meta(a,b,t)}
+</div>`;}
 
 function startExam(id){sessionStorage.setItem("exam_id",id);location.href="instructions.html";}
-function viewResult(id){sessionStorage.setItem("exam_id",id);location.href="result.html";}
-function reviewExam(id){sessionStorage.setItem("exam_id",id);location.href="review.html";}
 function logout(){sessionStorage.clear();location.href="index.html";}
 </script>
 

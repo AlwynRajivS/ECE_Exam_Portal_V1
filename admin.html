@@ -719,12 +719,21 @@ function downloadPDF(){
  const { jsPDF } = window.jspdf;
  const doc = new jsPDF();
 
- doc.setFont("Times","Normal");
+ doc.setFont("Times","bold");
 
  let y = 15;
 
  doc.setFontSize(14);
- doc.text("COLLEGE NAME",105,y,{align:"center"});
+ doc.text("Kamaraj College of Engineering and Technology",105,y,{align:"center"});
+ y+=8;
+
+
+doc.setFont("Times","Normal");
+
+ let y = 15;
+
+ doc.setFontSize(10);
+ doc.text("Kamaraj College of Engineering and Technology",105,y,{align:"center"});
  y+=8;
 
  /*doc.setFontSize(11);

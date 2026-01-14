@@ -600,7 +600,7 @@ function violate(type){
 
   // 🔥 AUTO SUBMIT (SAFE)
   if (violations >= limit) {
-  forceFinalizeAndSubmit();
+  submitExam();
 }
 
 }
@@ -846,16 +846,17 @@ function startTimer(){
 function confirmSubmit(){modal.style.display="flex"}
 function closeModal(){modal.style.display="none"}
 
+
 function submitExam(){
-  if (isSubmitting) return;
+  if (isSubmitting) return;   // 🔒 HARD STOP
   isSubmitting = true;
 
-  clearInterval(timerRef);
-  saveState();
+  clearInterval(timerRef);   // ⛔ STOP TIMER
 
   const finalAnswers = {};
-  questions.forEach((q,i)=>{
-    finalAnswers[String(q[2]).trim()] = answers[i]?.ans || "";
+  questions.forEach((q, i) => {
+    finalAnswers[String(q[2]).trim()] =
+      answers[i]?.ans || "";
   });
 
   fetch(WEBAPP_URL,{
@@ -866,11 +867,15 @@ function submitExam(){
       roll_no:user.roll,
       answers_json:JSON.stringify(finalAnswers),
       violation_log:JSON.stringify(violationLog),
-      total_violations:violations,
-      status:"SUBMITTED"
+      total_violations:violations
     })
-  }).then(()=>location.href="summary.html");
+  }).then(()=>{
+    sessionStorage.clear();  // 🧹 CLEAN STATE
+    location.replace("summary.html"); // 🔁 SAFE REDIRECT
+  });
 }
+
+
 
 
 function forceFinalizeAndSubmit(){

@@ -547,6 +547,7 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
 
 <script>
 let timerStarted = false;
+let examLocked = false;   // 🔒 once violation limit reached
 
  let examLoaded = false;
 let isSubmitting = false;
@@ -576,19 +577,41 @@ document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
 /* VIOLATIONS */
-function violate(type,auto=false){
- violations++;
- vio.innerText=`${violations} / ${limit}`;
- violationLog.push({type,time:new Date().toLocaleString()});
- proctorMsg.innerText =
-  `Violation: ${type} | Remaining: ${limit - violations}`;
- overlay.classList.add("active");
- setTimeout(()=>overlay.classList.remove("active"),2000);
- fetch(WEBAPP_URL,{method:"POST",
-  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
- });
- if (violations >= limit && questions.length > 0) {
- submitExam();
+function violate(type){
+  if (examLocked) return;   // 🔒 already submitted
+
+  violations++;
+  vio.innerText = `${violations} / ${limit}`;
+
+  violationLog.push({
+    type,
+    time: new Date().toLocaleString()
+  });
+
+  // 🔐 FORCE SAVE ANSWERS FIRST
+  saveState();
+
+  proctorMsg.innerText =
+    `Violation: ${type} | Remaining: ${limit - violations}`;
+  overlay.classList.add("active");
+  setTimeout(()=>overlay.classList.remove("active"),2000);
+
+  // ✅ log violation safely
+  navigator.sendBeacon(
+    WEBAPP_URL,
+    new URLSearchParams({
+      action: "violation",
+      exam_id,
+      roll_no: user.roll,
+      type
+    })
+  );
+
+  // 🚨 FINAL VIOLATION → AUTO SUBMIT
+  if (violations >= limit) {
+    examLocked = true;
+    setTimeout(autoSubmitFromViolation, 300);
+  }
 }
 
 
@@ -627,13 +650,26 @@ window.addEventListener("blur",()=>{
 
 /* ❌ Reload / refresh */
 window.addEventListener("beforeunload", (e)=>{
-  if(isSubmitting) return; // ✅ allow submit redirect
+  if(isSubmitting || examLocked) return;
 
   if(questions.length > 0){
-    violate("Page Reload / Refresh");
+    saveState();
     e.preventDefault();
-    e.returnValue = ""; // block accidental close
+    e.returnValue = "";
   }
+});
+
+// 🚫 BLOCK BACK BUTTON (COUNT AS VIOLATION)
+window.history.pushState(null, "", location.href);
+
+window.addEventListener("popstate", () => {
+  if (examLocked) return;
+
+  // Re-push state to block navigation
+  window.history.pushState(null, "", location.href);
+
+  // Count as violation
+  violate("Back Button Pressed");
 });
 
 
@@ -980,6 +1016,43 @@ function conv(x){
   if(ANGLE==="DEG") return math.unit(x,"deg");
   if(ANGLE==="GRAD") return math.unit(x*0.9,"deg");
   return x;
+}
+
+function violate(type){
+  if (examLocked) return;   // 🔒 already submitted
+
+  violations++;
+  vio.innerText = `${violations} / ${limit}`;
+
+  violationLog.push({
+    type,
+    time: new Date().toLocaleString()
+  });
+
+  // 🔐 FORCE SAVE ANSWERS FIRST
+  saveState();
+
+  proctorMsg.innerText =
+    `Violation: ${type} | Remaining: ${limit - violations}`;
+  overlay.classList.add("active");
+  setTimeout(()=>overlay.classList.remove("active"),2000);
+
+  // ✅ log violation safely
+  navigator.sendBeacon(
+    WEBAPP_URL,
+    new URLSearchParams({
+      action: "violation",
+      exam_id,
+      roll_no: user.roll,
+      type
+    })
+  );
+
+  // 🚨 FINAL VIOLATION → AUTO SUBMIT
+  if (violations >= limit) {
+    examLocked = true;
+    setTimeout(autoSubmitFromViolation, 300);
+  }
 }
 
 

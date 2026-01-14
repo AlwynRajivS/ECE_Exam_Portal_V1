@@ -576,25 +576,39 @@ document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
 /* VIOLATIONS */
-function violate(type,auto=false){
- violations++;
- vio.innerText=`${violations} / ${limit}`;
- violationLog.push({type,time:new Date().toLocaleString()});
- proctorMsg.innerText =
-  `Violation: ${type} | Remaining: ${limit - violations}`;
- overlay.classList.add("active");
- setTimeout(()=>overlay.classList.remove("active"),2000);
- fetch(WEBAPP_URL,{method:"POST",
-  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
- });
- if (violations >= limit && questions.length > 0) {
- submitExam();
+function violate(type){
+  if (isSubmitting) return;   // ⛔ already submitting
+
+  violations++;
+  vio.innerText = `${violations} / ${limit}`;
+  violationLog.push({ type, time: new Date().toLocaleString() });
+
+  proctorMsg.innerText =
+    `Violation: ${type} | Remaining: ${limit - violations}`;
+  overlay.classList.add("active");
+  setTimeout(()=>overlay.classList.remove("active"),2000);
+
+  fetch(WEBAPP_URL,{
+    method:"POST",
+    body:new URLSearchParams({
+      action:"violation",
+      exam_id,
+      roll_no:user.roll,
+      type
+    })
+  });
+
+  // 🔥 AUTO SUBMIT (SAFE)
+  if (violations >= limit) {
+    forceFinalizeAndSubmit();
+  }
 }
 
 
 
 
-}
+
+
 
 /* ================= STRICT PROCTOR EVENTS ================= */
 
@@ -844,6 +858,8 @@ questions.forEach((q, i) => {
 });
 
 
+
+
  fetch(WEBAPP_URL,{method:"POST",
   body:new URLSearchParams({
    action:"submitExam",
@@ -856,6 +872,17 @@ questions.forEach((q, i) => {
   })
  }).then(()=>location.href="summary.html");
 }
+
+function forceFinalizeAndSubmit(){
+  if (isSubmitting) return;
+
+  isSubmitting = true;              // 🔒 LOCK
+  clearInterval(timerRef);          // ⛔ stop timer
+  saveState();                      // 💾 save everything
+
+  setTimeout(submitExam, 300);      // ⏱ allow state flush
+}
+
 
 function saveState(){
  sessionStorage.setItem("answers", JSON.stringify(answers));

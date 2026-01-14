@@ -544,13 +544,12 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
   </div>
 </div>
 
-
 <script>
 /* ================= GLOBAL FLAGS ================= */
 let timerStarted = false;
 let examLoaded = false;
 let isSubmitting = false;
-let examLocked = false;   // 🔒 only true after final violation
+let examLocked = false;   // 🔒 ONLY after final violation
 
 const WEBAPP_URL =
 "https://script.google.com/macros/s/AKfycbxmFdZlBq4m_7SvJtVF9NbyGC-c_of2aqokQtyg81aH97WPo6AT56VvwKYGG_tz4XEq/exec";
@@ -564,6 +563,7 @@ let violationLog = [], duration = 0, limit = 0, partA = 0, partB = 0;
 
 const overlay = document.getElementById("proctorOverlay");
 const proctorMsg = document.getElementById("proctorMsg");
+const modal = document.getElementById("modal");
 
 /* ================= FULLSCREEN ================= */
 function forceFullscreen(){
@@ -575,10 +575,10 @@ document.addEventListener("DOMContentLoaded", forceFullscreen);
 document.addEventListener("click", forceFullscreen);
 
 /* ================= BACK BUTTON → VIOLATION ================= */
-window.history.pushState(null, "", location.href);
+history.pushState(null, "", location.href);
 window.addEventListener("popstate", () => {
   if (examLocked) return;
-  window.history.pushState(null, "", location.href);
+  history.pushState(null, "", location.href);
   violate("Back Button Pressed");
 });
 
@@ -588,17 +588,15 @@ function violate(type){
 
   violations++;
   vio.innerText = `${violations} / ${limit}`;
-
   violationLog.push({ type, time: new Date().toLocaleString() });
 
-  saveState(); // 🔐 ensure answers saved
+  saveState();
 
   proctorMsg.innerText =
     `Violation: ${type} | Remaining: ${limit - violations}`;
   overlay.classList.add("active");
   setTimeout(()=>overlay.classList.remove("active"),2000);
 
-  // ✅ survives reload / back
   navigator.sendBeacon(
     WEBAPP_URL,
     new URLSearchParams({
@@ -609,7 +607,6 @@ function violate(type){
     })
   );
 
-  // 🚨 FINAL VIOLATION
   if (violations >= limit) {
     examLocked = true;
     setTimeout(autoSubmitFromViolation, 300);
@@ -618,21 +615,14 @@ function violate(type){
 
 /* ================= STRICT PROCTOR EVENTS ================= */
 document.addEventListener("fullscreenchange",()=>{
-  if(!document.fullscreenElement){
-    violate("Exit Fullscreen");
-  }
+  if(!document.fullscreenElement) violate("Exit Fullscreen");
 });
-
 document.addEventListener("visibilitychange",()=>{
-  if(document.hidden){
-    violate("App Hidden / Notification / Call / Screen Lock");
-  }
+  if(document.hidden) violate("App Hidden / Notification / Call / Lock");
 });
-
 window.addEventListener("blur",()=>{
-  violate("App Switch / Control Center Swipe");
+  violate("App Switch");
 });
-
 ["copy","cut","contextmenu"].forEach(e=>{
   document.addEventListener(e,ev=>{
     ev.preventDefault();
@@ -651,48 +641,26 @@ window.addEventListener("beforeunload",(e)=>{
 /* ================= EXAM META ================= */
 fetch(WEBAPP_URL,{
   method:"POST",
-  body:new URLSearchParams({
-    action:"getExamMeta",
-    exam_id
-  })
+  body:new URLSearchParams({ action:"getExamMeta", exam_id })
 })
 .then(r=>r.json())
 .then(meta=>{
   duration = Number(meta.duration) * 60;
-  limit    = Number(meta.violation_limit);
-  partA    = Number(meta.partA);
-  partB    = Number(meta.partB);
+  limit = Number(meta.violation_limit);
+  partA = Number(meta.partA);
+  partB = Number(meta.partB);
   vio.innerText = `0 / ${limit}`;
-
-  const calcPermission =
-    String(meta.calc || meta.calculator || "NO").trim().toUpperCase();
-
-  if(calcPermission === "YES"){
-    calcBtn.style.display = "inline-flex";
-  }else{
-    calcBtn.style.display = "none";
-    calculator.style.display = "none";
-  }
 
   return fetch(WEBAPP_URL,{
     method:"POST",
-    body:new URLSearchParams({
-      action:"getQuestions",
-      exam_id
-    })
+    body:new URLSearchParams({ action:"getQuestions", exam_id })
   });
 })
 .then(r=>r.json())
 .then(allQ=>{
   const shuffle=a=>[...a].sort(()=>Math.random()-0.5);
-
-  const A = shuffle(allQ.filter(q=>q[1]==="PART A")).slice(0,partA);
-  const B = shuffle(allQ.filter(q=>q[1]==="PART B")).slice(0,partB);
-
-  questions = A.concat(B);
-
+  questions = shuffle(allQ);
   document.getElementById("loading").style.display="none";
-  examLoaded = true;
   drawPalette();
   restoreState();
   loadQ();
@@ -705,35 +673,21 @@ function loadQ(){
   question.innerHTML = `
     <span class="section">${q[1]}</span>
     <h3>Q${index+1}. ${escapeHTML(q[3])}</h3>
-    ${q[9]?`<img class="qimg" src="${q[9]}">`:""}
     ${["A","B","C","D"].map((o,i)=>`
       <div class="option ${answers[index]?.ans===o?"selected":""}"
            onclick="selectAns('${o}')">${q[4+i]}</div>
     `).join("")}
   `;
-  submitBtn.disabled = index !== questions.length - 1;
+  submitBtn.disabled = index !== questions.length-1;
   bar.style.width = ((index+1)/questions.length*100)+"%";
 }
 
 function selectAns(a){
   if(examLocked) return;
-  answers[index] = { qid: questions[index][2], ans: a };
+  answers[index]={qid:questions[index][2],ans:a};
   document.getElementById("p"+index)?.classList.add("answered");
   saveState();
   loadQ();
-}
-
-function drawPalette(){
-  palette.innerHTML="";
-  questions.forEach((_,i)=>{
-    palette.innerHTML+=
-      `<span id="p${i}" onclick="index=${i};loadQ()">${i+1}</span>`;
-  });
-}
-
-function markReview(){
-  if(examLocked) return;
-  document.getElementById("p"+index)?.classList.add("review");
 }
 
 function nextQ(){
@@ -743,6 +697,18 @@ function nextQ(){
     saveState();
     loadQ();
   }
+}
+
+function markReview(){
+  if(examLocked) return;
+  document.getElementById("p"+index)?.classList.add("review");
+}
+
+function drawPalette(){
+  palette.innerHTML="";
+  questions.forEach((_,i)=>{
+    palette.innerHTML+=`<span id="p${i}" onclick="index=${i};loadQ()">${i+1}</span>`;
+  });
 }
 
 function escapeHTML(s){
@@ -761,26 +727,21 @@ function startTimer(){
       `${Math.floor(duration/60)}:${String(duration%60).padStart(2,"0")}`;
     duration--;
     saveState();
-    if(duration < 0) submitExam();
+    if(duration<0) submitExam(true);
   },1000);
 }
 
-/* ================= AUTO SUBMIT (VIOLATION SAFE) ================= */
+/* ================= AUTO SUBMIT ================= */
 function autoSubmitFromViolation(){
   if(isSubmitting) return;
-  isSubmitting = true;
+  isSubmitting=true;
 
   clearInterval(timerRef);
   saveState();
 
-  if(sessionStorage.getItem("answers")){
-    answers = JSON.parse(sessionStorage.getItem("answers"));
-  }
-
-  const finalAnswers = {};
+  const finalAnswers={};
   questions.forEach((q,i)=>{
-    finalAnswers[String(q[2]).trim()] =
-      answers[i]?.ans || "";
+    finalAnswers[String(q[2]).trim()] = answers[i]?.ans || "";
   });
 
   navigator.sendBeacon(
@@ -801,13 +762,13 @@ function autoSubmitFromViolation(){
 
 /* ================= MANUAL SUBMIT ================= */
 function confirmSubmit(){
-  if(examLocked) return;
+  if(examLocked || isSubmitting) return;
   modal.style.display="flex";
 }
 function closeModal(){ modal.style.display="none"; }
 
-function submitExam(){
-  if(isSubmitting || examLocked) return;
+function submitExam(auto=false){
+  if(isSubmitting) return;
   isSubmitting=true;
 
   clearInterval(timerRef);
@@ -815,8 +776,7 @@ function submitExam(){
 
   const finalAnswers={};
   questions.forEach((q,i)=>{
-    finalAnswers[String(q[2]).trim()] =
-      answers[i]?.ans || "";
+    finalAnswers[String(q[2]).trim()] = answers[i]?.ans || "";
   });
 
   fetch(WEBAPP_URL,{
@@ -828,7 +788,7 @@ function submitExam(){
       answers_json:JSON.stringify(finalAnswers),
       violation_log:JSON.stringify(violationLog),
       total_violations:violations,
-      status:"SUBMITTED"
+      status:auto?"AUTO_SUBMITTED":"SUBMITTED"
     })
   }).then(()=>location.replace("summary.html"));
 }
@@ -849,6 +809,7 @@ function restoreState(){
     vio.innerText=`${violations} / ${limit}`;
   }
 }
+
 
 /* ================= CALCULATOR ================= */
 const calculator=document.getElementById("calculator");

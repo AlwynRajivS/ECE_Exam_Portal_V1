@@ -746,15 +746,18 @@ doc.text(
   { align: "center" }
 );
 
-// (Optional) revert back to normal font after this
-doc.setFont("Times", "normal");
+
 
 y += 8;
 
 // Row 2: Department   Section   Year (with spacing)
 doc.text(`Department: ${rep_dept.value || "ALL"}`, 14, y);
 doc.text(`Section: ${rep_section.value || "ALL"}`, 80, y);
-doc.text(`Year: ${rep_year.value || "ALL"}`, 140, y);
+doc.text(`Year: ${rep_year.value || "ALL"}`, 140, y, { align: "center" }
+);
+
+// (Optional) revert back to normal font after this
+doc.setFont("Times", "normal");
 y += 8;
 
 
@@ -797,6 +800,11 @@ doc.autoTable({
      fontSize:10,
      halign:"center"
    },
+
+  // Column-wise alignment (0-based index)
+  columnStyles: {
+    2: { halign: "left" } // "Student Name" column
+  },
    headStyles:{
      fillColor:[21,101,192]
    },

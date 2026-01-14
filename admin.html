@@ -752,16 +752,36 @@ y += 8;
 
 
 
-// 1. Sort by Roll No
+// Sort REPORT_DATA by Roll No (column index 1)
 REPORT_DATA.sort((a, b) =>
-  a[1].localeCompare(b[1], undefined, { numeric: true })
+  a[1].localeCompare(b[1], undefined, {
+    numeric: true,
+    sensitivity: "base"
+  })
 );
 
-// 2. Fix S.No
-REPORT_DATA.forEach((row, i) => row[0] = i + 1);
+// Re-assign S.No after sorting
+REPORT_DATA.forEach((row, index) => {
+  row[0] = index + 1;
+});
+
+doc.autoTable({
+  startY: y,
+  head: [["S.No","Roll No","Student Name","Marks","Violations"]],
+  body: REPORT_DATA,
+  styles:{
+    font: "Times",
+    fontSize: 10,
+    halign: "center"
+  },
+  headStyles:{
+    fillColor: [21,101,192]
+  },
+  theme: "grid"
+});
 
 
- doc.autoTable({
+ /*doc.autoTable({
    startY: y,
    head: [["S.No","Roll No","Student Name","Marks","Violations"]],
    body: REPORT_DATA,
@@ -774,7 +794,7 @@ REPORT_DATA.forEach((row, i) => row[0] = i + 1);
      fillColor:[21,101,192]
    },
    theme:"grid"
- });
+ });*/
 
  doc.save("Exam_Report.pdf");
 }

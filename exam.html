@@ -544,51 +544,51 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
   </div>
 </div>
 
-
 <script>
+/* ================= GLOBAL FLAGS ================= */
 let timerStarted = false;
-let examLocked = false;   // 🔒 once violation limit reached
-
- let examLoaded = false;
+let examLoaded = false;
 let isSubmitting = false;
+let examLocked = false;
 
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxmFdZlBq4m_7SvJtVF9NbyGC-c_of2aqokQtyg81aH97WPo6AT56VvwKYGG_tz4XEq/exec";
+const WEBAPP_URL =
+"https://script.google.com/macros/s/AKfycbxmFdZlBq4m_7SvJtVF9NbyGC-c_of2aqokQtyg81aH97WPo6AT56VvwKYGG_tz4XEq/exec";
 
+const user = JSON.parse(sessionStorage.getItem("user"));
+const exam_id = sessionStorage.getItem("exam_id");
+studentInfo.innerText = `${user.name} (${user.roll})`;
 
-const user=JSON.parse(sessionStorage.getItem("user"));
-const exam_id=sessionStorage.getItem("exam_id");
-studentInfo.innerText=`${user.name} (${user.roll})`;
+let questions = [], index = 0, answers = {}, violations = 0;
+let violationLog = [], duration = 0, limit = 0, partA = 0, partB = 0;
 
-let questions=[],index=0,answers={},violations=0;
-let violationLog=[],duration=0,limit=0,partA=0,partB=0;
+const overlay = document.getElementById("proctorOverlay");
+const proctorMsg = document.getElementById("proctorMsg");
 
-const overlay=document.getElementById("proctorOverlay");
-const proctorMsg=document.getElementById("proctorMsg");
-
-
-
-/* FULLSCREEN */
+/* ================= FULLSCREEN ================= */
 function forceFullscreen(){
- if(!document.fullscreenElement){
-  document.documentElement.requestFullscreen().catch(()=>{});
- }
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(()=>{});
+  }
 }
-document.addEventListener("DOMContentLoaded",forceFullscreen);
-document.addEventListener("click",forceFullscreen);
+document.addEventListener("DOMContentLoaded", forceFullscreen);
+document.addEventListener("click", forceFullscreen);
 
-/* VIOLATIONS */
+/* ================= BACK BUTTON → VIOLATION ================= */
+window.history.pushState(null, "", location.href);
+window.addEventListener("popstate", () => {
+  if (examLocked) return;
+  window.history.pushState(null, "", location.href);
+  violate("Back Button Pressed");
+});
+
+/* ================= VIOLATION HANDLER ================= */
 function violate(type){
-  if (examLocked) return;   // 🔒 already submitted
+  if (examLocked) return;
 
   violations++;
   vio.innerText = `${violations} / ${limit}`;
 
-  violationLog.push({
-    type,
-    time: new Date().toLocaleString()
-  });
-
-  // 🔐 FORCE SAVE ANSWERS FIRST
+  violationLog.push({ type, time: new Date().toLocaleString() });
   saveState();
 
   proctorMsg.innerText =
@@ -596,467 +596,261 @@ function violate(type){
   overlay.classList.add("active");
   setTimeout(()=>overlay.classList.remove("active"),2000);
 
-  // ✅ log violation safely
   navigator.sendBeacon(
     WEBAPP_URL,
     new URLSearchParams({
-      action: "violation",
+      action:"violation",
       exam_id,
-      roll_no: user.roll,
+      roll_no:user.roll,
       type
     })
   );
 
-  // 🚨 FINAL VIOLATION → AUTO SUBMIT
   if (violations >= limit) {
     examLocked = true;
     setTimeout(autoSubmitFromViolation, 300);
   }
 }
 
-
-
-
-}
-
 /* ================= STRICT PROCTOR EVENTS ================= */
-
-/* ❌ Exit fullscreen */
 document.addEventListener("fullscreenchange",()=>{
- if(!document.fullscreenElement){
-  violate("Exit Fullscreen");
- }
+  if(!document.fullscreenElement) violate("Exit Fullscreen");
 });
 
-/* ❌ Notification / call / lock / background */
 document.addEventListener("visibilitychange",()=>{
- if(document.hidden){
-  violate("App Hidden / Notification / Call / Screen Lock");
- }
+  if(document.hidden) violate("App Hidden / Notification / Call / Screen Lock");
 });
 
-/* ❌ Control center / quick app switch */
 window.addEventListener("blur",()=>{
- violate("App Switch / Control Center Swipe");
+  violate("App Switch / Control Center Swipe");
 });
 
-/* ❌ Copy / cut / right click */
 ["copy","cut","contextmenu"].forEach(e=>{
- document.addEventListener(e,ev=>{
-  ev.preventDefault();
-  violate(e.toUpperCase());
- });
+  document.addEventListener(e,ev=>{
+    ev.preventDefault();
+    violate(e.toUpperCase());
+  });
 });
 
-/* ❌ Reload / refresh */
-window.addEventListener("beforeunload", (e)=>{
+/* ================= BEFORE UNLOAD ================= */
+window.addEventListener("beforeunload",(e)=>{
   if(isSubmitting || examLocked) return;
-
-  if(questions.length > 0){
-    saveState();
-    e.preventDefault();
-    e.returnValue = "";
-  }
+  saveState();
+  e.preventDefault();
+  e.returnValue="";
 });
 
-// 🚫 BLOCK BACK BUTTON (COUNT AS VIOLATION)
-window.history.pushState(null, "", location.href);
-
-window.addEventListener("popstate", () => {
-  if (examLocked) return;
-
-  // Re-push state to block navigation
-  window.history.pushState(null, "", location.href);
-
-  // Count as violation
-  violate("Back Button Pressed");
-});
-
-
-
-/* EXAM META */
-/* ================= EXAM META → QUESTIONS (FIXED) ================= */
-
+/* ================= EXAM META ================= */
 fetch(WEBAPP_URL,{
- method:"POST",
- body:new URLSearchParams({
-   action:"getExamMeta",
-   exam_id
- })
+  method:"POST",
+  body:new URLSearchParams({ action:"getExamMeta", exam_id })
 })
-.then(r => r.json())
-.then(meta => {
-
-  if(meta.error){
-    alert(meta.error);
-    return;
-  }
-
-  /* 1️⃣ SET META FIRST */
+.then(r=>r.json())
+.then(meta=>{
   duration = Number(meta.duration) * 60;
-  limit    = Number(meta.violation_limit);
-  partA    = Number(meta.partA);
-  partB    = Number(meta.partB);
-
+  limit = Number(meta.violation_limit);
+  partA = Number(meta.partA);
+  partB = Number(meta.partB);
   vio.innerText = `0 / ${limit}`;
 
-  /* ================= CALCULATOR BACKEND CONTROL ================= */
+  const calcPermission =
+    String(meta.calc || meta.calculator || "NO").trim().toUpperCase();
 
-const calcPermission =
-  String(meta.calc || meta.calculator || "NO")
-    .trim()
-    .toUpperCase();
+  if(calcPermission === "YES"){
+    calcBtn.style.display = "inline-flex";
+  }else{
+    calcBtn.style.display = "none";
+    calculator.style.display = "none";
+  }
 
-if (calcPermission === "YES") {
-  // ✅ ENABLE calculator
-  calcBtn.style.display = "inline-flex";
-} else {
-  // ❌ DISABLE calculator
-  calcBtn.style.display = "none";
-  calculator.style.display = "none"; // force close if open
-}
-
-
-  /* 2️⃣ NOW FETCH QUESTIONS (SAFE) */
   return fetch(WEBAPP_URL,{
     method:"POST",
-    body:new URLSearchParams({
-      action:"getQuestions",
-      exam_id
-    })
+    body:new URLSearchParams({ action:"getQuestions", exam_id })
   });
 })
-.then(r => r.json())
-.then(allQ => {
-
-  if(!Array.isArray(allQ) || allQ.length === 0){
-    alert("No questions found");
-    return;
-  }
-
-  /* 3️⃣ FILTER & SLICE */
-  const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
-
-  const partAQuestions = allQ.filter(q => q[1] === "PART A");
-  const partBQuestions = allQ.filter(q => q[1] === "PART B");
-
-  const A = shuffle(partAQuestions).slice(0, partA);
-  const B = shuffle(partBQuestions).slice(0, partB);
-
-  questions = A.concat(B);
-
-  if(!questions.length){
-    alert("Question set empty – check counts");
-    return;
-  }
-
-  /* 4️⃣ FINAL INITIALIZATION */
-  document.getElementById("loading").style.display = "none";
-examLoaded = true;
+.then(r=>r.json())
+.then(allQ=>{
+  const shuffle=a=>[...a].sort(()=>Math.random()-0.5);
+  questions = shuffle(allQ.filter(q=>q[1]==="PART A")).slice(0,partA)
+              .concat(shuffle(allQ.filter(q=>q[1]==="PART B")).slice(0,partB));
+  document.getElementById("loading").style.display="none";
+  examLoaded=true;
   drawPalette();
   restoreState();
   loadQ();
   startTimer();
-})
-.catch(err=>{
-  console.error(err);
-
-  // ❗ Only show error if exam never loaded
-  if(!examLoaded){
-    alert("May Be Loaded Wait");
-  }
 });
 
-
-
-
+/* ================= QUESTION ================= */
 function loadQ(){
-  if(index < 0 || index >= questions.length){
-    index = 0;
-  }
-
-  const q = questions[index];
-
-  question.innerHTML = `
+  const q=questions[index];
+  question.innerHTML=`
     <span class="section">${q[1]}</span>
     <h3>Q${index+1}. ${escapeHTML(q[3])}</h3>
-
-    ${q[9] ? `<img class="qimg" src="${q[9]}">` : ""}
-
+    ${q[9]?`<img class="qimg" src="${q[9]}">`:""}
     ${["A","B","C","D"].map((o,i)=>`
-      <div class="option ${answers[index]?.ans === o ? 'selected' : ''}"
-        onclick="selectAns('${o}')">
-        ${q[4+i]}
-      </div>
+      <div class="option ${answers[index]?.ans===o?"selected":""}"
+           onclick="selectAns('${o}')">${q[4+i]}</div>
     `).join("")}
   `;
-
-  submitBtn.disabled = index !== questions.length - 1;
- //submitBtn.disabled = false
- //submitBtn.disabled = questions.length === 0;
- bar.style.width = ((index + 1) / questions.length * 100) + "%";
+  submitBtn.disabled=index!==questions.length-1;
+  bar.style.width=((index+1)/questions.length*100)+"%";
 }
-
 
 function selectAns(a){
-  answers[index] = {
-    qid: questions[index][2],
-    ans: a
-  };
-
-  const p = document.getElementById("p"+index);
-  if(p){
-    p.classList.add("answered");
-    p.classList.remove("review");
-  }
-
-  saveState();
-  loadQ();   // 🔥 force redraw (important)
+  if(examLocked) return;
+  answers[index]={qid:questions[index][2],ans:a};
+  document.getElementById("p"+index)?.classList.add("answered");
+  saveState(); loadQ();
 }
-
-function escapeHTML(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 
 function drawPalette(){
-  palette.innerHTML = "";
-  questions.forEach((_, i)=>{
-    palette.innerHTML += `
-      <span id="p${i}" onclick="index=${i};loadQ()">
-        ${i+1}
-      </span>`;
+  palette.innerHTML="";
+  questions.forEach((_,i)=>{
+    palette.innerHTML+=`<span id="p${i}" onclick="index=${i};loadQ()">${i+1}</span>`;
   });
 }
 
-function markReview(){document.getElementById("p"+index).classList.add("review")}
-function nextQ(){
-  if(index < questions.length - 1){
-    index++;
-    saveState();
-    loadQ();
-  }
+function escapeHTML(s){
+  return String(s).replace(/[&<>"']/g,m=>(
+    {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]
+  ));
 }
 
-
-/* TIMER */
+/* ================= TIMER ================= */
 let timerRef=null;
-
 function startTimer(){
-  if(timerStarted) return;   // ⛔ prevents duplicate timers
-  timerStarted = true;
-
-  timerRef = setInterval(()=>{
-    const m = Math.floor(duration / 60);
-    const s = duration % 60;
-    timer.innerText = `${m}:${String(s).padStart(2,"0")}`;
-    duration--;
-    saveState();
-    if(duration < 0) submitExam();
+  if(timerStarted) return;
+  timerStarted=true;
+  timerRef=setInterval(()=>{
+    timer.innerText=
+      `${Math.floor(duration/60)}:${String(duration%60).padStart(2,"0")}`;
+    duration--; saveState();
+    if(duration<0) submitExam();
   },1000);
 }
 
+/* ================= AUTO SUBMIT ================= */
+function autoSubmitFromViolation(){
+  if(isSubmitting) return;
+  isSubmitting=true;
+  clearInterval(timerRef); saveState();
 
-
-/* SUBMIT */
-function confirmSubmit(){modal.style.display="flex"}
-function closeModal(){modal.style.display="none"}
-
-function submitExam(){
-if (isSubmitting) return;   // 🔒 HARD STOP
-  isSubmitting = true;
-
-  clearInterval(timerRef);   // ⛔ STOP
-
- const finalAnswers={};
-questions.forEach((q, i) => {
-  finalAnswers[String(q[2]).trim()] =
-    answers[i]?.ans || "";
-});
-
-
- fetch(WEBAPP_URL,{method:"POST",
-  body:new URLSearchParams({
-   action:"submitExam",
-   exam_id,
-   roll_no:user.roll,
-   answers_json:JSON.stringify(finalAnswers),
-   violation_log:JSON.stringify(violationLog),
-   total_violations:violations,
-   //status:"SUBMITTED"
-  })
- }).then(()=>location.href="summary.html");
-}
-
-function saveState(){
- sessionStorage.setItem("answers", JSON.stringify(answers));
- sessionStorage.setItem("index", index);
- sessionStorage.setItem("timeLeft", duration);
- sessionStorage.setItem("violations", violations);
- 
-}
-
-function restoreState(){
- const savedSig = sessionStorage.getItem("qSignature");
- const currentSig = questions.map(q=>q[2]).join(",");
-
- if(savedSig !== currentSig){
- sessionStorage.removeItem("answers");
- sessionStorage.removeItem("index");
- sessionStorage.removeItem("timeLeft");
- sessionStorage.removeItem("violations");
- answers = {};
- index = 0;
- return;
-}
-
- if(sessionStorage.getItem("answers")){
-   answers = JSON.parse(sessionStorage.getItem("answers"));
-   index = Number(sessionStorage.getItem("index") || 0);
-   duration = Number(sessionStorage.getItem("timeLeft") || duration);
-   violations = Number(sessionStorage.getItem("violations") || 0);
-   vio.innerText=`${violations} / ${limit}`;
- }
-}
-
-/* CALCULATOR */
-function toggleCalc(){
- calculator.style.display=calculator.style.display=="block"?"none":"block";
-}
-
-const calculator = document.getElementById("calculator");
-const calcScreen = document.getElementById("calcScreen");
-
-/* Toggle */
-function toggleCalc(){
-  calculator.style.display =
-    calculator.style.display === "block" ? "none" : "block";
-}
-
-/* Append value */
-let SHIFT=false;
-let ANGLE="DEG";
-let MEMORY=0;
-let ANSWER=0;
-
-function toggleShift(){
-  SHIFT=!SHIFT;
-}
-
-function toggleAngle(){
-  ANGLE = ANGLE==="DEG" ? "RAD" : ANGLE==="RAD" ? "GRAD" : "DEG";
-  document.getElementById("mode").innerText = ANGLE;
-}
-
-function calc(v){
-  calcScreen.value += v;
-}
-
-function fn(f){
-  if(SHIFT){
-    if(f==="sin") calcScreen.value+="asin(";
-    if(f==="cos") calcScreen.value+="acos(";
-    if(f==="tan") calcScreen.value+="atan(";
-    SHIFT=false;
-  }else{
-    calcScreen.value+=f+"(";
-  }
-}
-
-function sqrt(){
-  calcScreen.value+="sqrt(";
-}
-
-function del(){
-  calcScreen.value=calcScreen.value.slice(0,-1);
-}
-
-function clearCalc(){
-  calcScreen.value="";
-}
-
-function ans(){
-  calcScreen.value+=ANSWER;
-}
-
-function memAdd(){ MEMORY+=Number(calcScreen.value||0); }
-function memSub(){ MEMORY-=Number(calcScreen.value||0); }
-function memRecall(){ calcScreen.value+=MEMORY; }
-function memClear(){ MEMORY=0; }
-
-function calculate(){
-  try{
-    let scope={
-      sin:x=>math.sin(conv(x)),
-      cos:x=>math.cos(conv(x)),
-      tan:x=>math.tan(conv(x)),
-      asin:x=>math.asin(x),
-      acos:x=>math.acos(x),
-      atan:x=>math.atan(x),
-      log:x=>math.log10(x),
-      ln:x=>math.log(x),
-      pi:math.pi,
-      e:math.e,
-      sqrt:x=>math.sqrt(x)
-    };
-    let res=math.evaluate(calcScreen.value,scope);
-    ANSWER=res;
-    calcScreen.value=res;
-  }catch{
-    calcScreen.value="Error";
-  }
-}
-
-function conv(x){
-  if(ANGLE==="DEG") return math.unit(x,"deg");
-  if(ANGLE==="GRAD") return math.unit(x*0.9,"deg");
-  return x;
-}
-
-function violate(type){
-  if (examLocked) return;   // 🔒 already submitted
-
-  violations++;
-  vio.innerText = `${violations} / ${limit}`;
-
-  violationLog.push({
-    type,
-    time: new Date().toLocaleString()
+  const finalAnswers={};
+  questions.forEach((q,i)=>{
+    finalAnswers[String(q[2]).trim()]=answers[i]?.ans||"";
   });
 
-  // 🔐 FORCE SAVE ANSWERS FIRST
-  saveState();
-
-  proctorMsg.innerText =
-    `Violation: ${type} | Remaining: ${limit - violations}`;
-  overlay.classList.add("active");
-  setTimeout(()=>overlay.classList.remove("active"),2000);
-
-  // ✅ log violation safely
   navigator.sendBeacon(
     WEBAPP_URL,
     new URLSearchParams({
-      action: "violation",
+      action:"submitExam",
       exam_id,
-      roll_no: user.roll,
-      type
+      roll_no:user.roll,
+      answers_json:JSON.stringify(finalAnswers),
+      violation_log:JSON.stringify(violationLog),
+      total_violations:violations,
+      status:"AUTO_SUBMITTED"
     })
   );
 
-  // 🚨 FINAL VIOLATION → AUTO SUBMIT
-  if (violations >= limit) {
-    examLocked = true;
-    setTimeout(autoSubmitFromViolation, 300);
+  setTimeout(()=>location.replace("summary.html"),800);
+}
+
+/* ================= MANUAL SUBMIT ================= */
+function submitExam(){
+  if(isSubmitting) return;
+  isSubmitting=true;
+  clearInterval(timerRef); saveState();
+
+  const finalAnswers={};
+  questions.forEach((q,i)=>{
+    finalAnswers[String(q[2]).trim()]=answers[i]?.ans||"";
+  });
+
+  fetch(WEBAPP_URL,{
+    method:"POST",
+    body:new URLSearchParams({
+      action:"submitExam",
+      exam_id,
+      roll_no:user.roll,
+      answers_json:JSON.stringify(finalAnswers),
+      violation_log:JSON.stringify(violationLog),
+      total_violations:violations,
+      status:"SUBMITTED"
+    })
+  }).then(()=>location.replace("summary.html"));
+}
+
+/* ================= STATE ================= */
+function saveState(){
+  sessionStorage.setItem("answers",JSON.stringify(answers));
+  sessionStorage.setItem("index",index);
+  sessionStorage.setItem("timeLeft",duration);
+  sessionStorage.setItem("violations",violations);
+}
+function restoreState(){
+  if(sessionStorage.getItem("answers")){
+    answers=JSON.parse(sessionStorage.getItem("answers"));
+    index=+sessionStorage.getItem("index")||0;
+    duration=+sessionStorage.getItem("timeLeft")||duration;
+    violations=+sessionStorage.getItem("violations")||0;
+    vio.innerText=`${violations} / ${limit}`;
   }
 }
 
+/* ================= CALCULATOR (RESTORED) ================= */
+const calculator=document.getElementById("calculator");
+const calcScreen=document.getElementById("calcScreen");
 
+function toggleCalc(){
+  calculator.style.display=
+    calculator.style.display==="block"?"none":"block";
+}
 
+let SHIFT=false,ANGLE="DEG",MEMORY=0,ANSWER=0;
+
+function toggleShift(){SHIFT=!SHIFT}
+function toggleAngle(){
+  ANGLE=ANGLE==="DEG"?"RAD":ANGLE==="RAD"?"GRAD":"DEG";
+  mode.innerText=ANGLE;
+}
+function calc(v){calcScreen.value+=v}
+function fn(f){
+  if(SHIFT){
+    calcScreen.value+=`a${f}(`; SHIFT=false;
+  }else calcScreen.value+=`${f}(`;
+}
+function sqrt(){calcScreen.value+="sqrt("}
+function del(){calcScreen.value=calcScreen.value.slice(0,-1)}
+function clearCalc(){calcScreen.value=""}
+function ans(){calcScreen.value+=ANSWER}
+
+function memAdd(){MEMORY+=Number(calcScreen.value||0)}
+function memSub(){MEMORY-=Number(calcScreen.value||0)}
+function memRecall(){calcScreen.value+=MEMORY}
+function memClear(){MEMORY=0}
+
+function calculate(){
+  try{
+    const scope={
+      sin:x=>math.sin(conv(x)),cos:x=>math.cos(conv(x)),
+      tan:x=>math.tan(conv(x)),asin:math.asin,
+      acos:math.acos,atan:math.atan,
+      log:x=>math.log10(x),ln:x=>math.log(x),
+      sqrt:math.sqrt,pi:math.pi,e:math.e
+    };
+    ANSWER=math.evaluate(calcScreen.value,scope);
+    calcScreen.value=ANSWER;
+  }catch{calcScreen.value="Error"}
+}
+function conv(x){
+  if(ANGLE==="DEG")return math.unit(x,"deg");
+  if(ANGLE==="GRAD")return math.unit(x*0.9,"deg");
+  return x;
+}
 </script>
+
+
 </body>
 </html> 

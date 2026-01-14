@@ -544,12 +544,13 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
   </div>
 </div>
 
+
 <script>
 /* ================= GLOBAL FLAGS ================= */
 let timerStarted = false;
 let examLoaded = false;
 let isSubmitting = false;
-let examLocked = false;
+let examLocked = false;   // 🔒 only true after final violation
 
 const WEBAPP_URL =
 "https://script.google.com/macros/s/AKfycbxmFdZlBq4m_7SvJtVF9NbyGC-c_of2aqokQtyg81aH97WPo6AT56VvwKYGG_tz4XEq/exec";
@@ -589,13 +590,15 @@ function violate(type){
   vio.innerText = `${violations} / ${limit}`;
 
   violationLog.push({ type, time: new Date().toLocaleString() });
-  saveState();
+
+  saveState(); // 🔐 ensure answers saved
 
   proctorMsg.innerText =
     `Violation: ${type} | Remaining: ${limit - violations}`;
   overlay.classList.add("active");
   setTimeout(()=>overlay.classList.remove("active"),2000);
 
+  // ✅ survives reload / back
   navigator.sendBeacon(
     WEBAPP_URL,
     new URLSearchParams({
@@ -606,6 +609,7 @@ function violate(type){
     })
   );
 
+  // 🚨 FINAL VIOLATION
   if (violations >= limit) {
     examLocked = true;
     setTimeout(autoSubmitFromViolation, 300);
@@ -614,11 +618,15 @@ function violate(type){
 
 /* ================= STRICT PROCTOR EVENTS ================= */
 document.addEventListener("fullscreenchange",()=>{
-  if(!document.fullscreenElement) violate("Exit Fullscreen");
+  if(!document.fullscreenElement){
+    violate("Exit Fullscreen");
+  }
 });
 
 document.addEventListener("visibilitychange",()=>{
-  if(document.hidden) violate("App Hidden / Notification / Call / Screen Lock");
+  if(document.hidden){
+    violate("App Hidden / Notification / Call / Screen Lock");
+  }
 });
 
 window.addEventListener("blur",()=>{
@@ -643,14 +651,17 @@ window.addEventListener("beforeunload",(e)=>{
 /* ================= EXAM META ================= */
 fetch(WEBAPP_URL,{
   method:"POST",
-  body:new URLSearchParams({ action:"getExamMeta", exam_id })
+  body:new URLSearchParams({
+    action:"getExamMeta",
+    exam_id
+  })
 })
 .then(r=>r.json())
 .then(meta=>{
   duration = Number(meta.duration) * 60;
-  limit = Number(meta.violation_limit);
-  partA = Number(meta.partA);
-  partB = Number(meta.partB);
+  limit    = Number(meta.violation_limit);
+  partA    = Number(meta.partA);
+  partB    = Number(meta.partB);
   vio.innerText = `0 / ${limit}`;
 
   const calcPermission =
@@ -665,16 +676,23 @@ fetch(WEBAPP_URL,{
 
   return fetch(WEBAPP_URL,{
     method:"POST",
-    body:new URLSearchParams({ action:"getQuestions", exam_id })
+    body:new URLSearchParams({
+      action:"getQuestions",
+      exam_id
+    })
   });
 })
 .then(r=>r.json())
 .then(allQ=>{
   const shuffle=a=>[...a].sort(()=>Math.random()-0.5);
-  questions = shuffle(allQ.filter(q=>q[1]==="PART A")).slice(0,partA)
-              .concat(shuffle(allQ.filter(q=>q[1]==="PART B")).slice(0,partB));
+
+  const A = shuffle(allQ.filter(q=>q[1]==="PART A")).slice(0,partA);
+  const B = shuffle(allQ.filter(q=>q[1]==="PART B")).slice(0,partB);
+
+  questions = A.concat(B);
+
   document.getElementById("loading").style.display="none";
-  examLoaded=true;
+  examLoaded = true;
   drawPalette();
   restoreState();
   loadQ();
@@ -683,8 +701,8 @@ fetch(WEBAPP_URL,{
 
 /* ================= QUESTION ================= */
 function loadQ(){
-  const q=questions[index];
-  question.innerHTML=`
+  const q = questions[index];
+  question.innerHTML = `
     <span class="section">${q[1]}</span>
     <h3>Q${index+1}. ${escapeHTML(q[3])}</h3>
     ${q[9]?`<img class="qimg" src="${q[9]}">`:""}
@@ -693,22 +711,38 @@ function loadQ(){
            onclick="selectAns('${o}')">${q[4+i]}</div>
     `).join("")}
   `;
-  submitBtn.disabled=index!==questions.length-1;
-  bar.style.width=((index+1)/questions.length*100)+"%";
+  submitBtn.disabled = index !== questions.length - 1;
+  bar.style.width = ((index+1)/questions.length*100)+"%";
 }
 
 function selectAns(a){
   if(examLocked) return;
-  answers[index]={qid:questions[index][2],ans:a};
+  answers[index] = { qid: questions[index][2], ans: a };
   document.getElementById("p"+index)?.classList.add("answered");
-  saveState(); loadQ();
+  saveState();
+  loadQ();
 }
 
 function drawPalette(){
   palette.innerHTML="";
   questions.forEach((_,i)=>{
-    palette.innerHTML+=`<span id="p${i}" onclick="index=${i};loadQ()">${i+1}</span>`;
+    palette.innerHTML+=
+      `<span id="p${i}" onclick="index=${i};loadQ()">${i+1}</span>`;
   });
+}
+
+function markReview(){
+  if(examLocked) return;
+  document.getElementById("p"+index)?.classList.add("review");
+}
+
+function nextQ(){
+  if(examLocked) return;
+  if(index < questions.length-1){
+    index++;
+    saveState();
+    loadQ();
+  }
 }
 
 function escapeHTML(s){
@@ -723,22 +757,30 @@ function startTimer(){
   if(timerStarted) return;
   timerStarted=true;
   timerRef=setInterval(()=>{
-    timer.innerText=
+    timer.innerText =
       `${Math.floor(duration/60)}:${String(duration%60).padStart(2,"0")}`;
-    duration--; saveState();
-    if(duration<0) submitExam();
+    duration--;
+    saveState();
+    if(duration < 0) submitExam();
   },1000);
 }
 
-/* ================= AUTO SUBMIT ================= */
+/* ================= AUTO SUBMIT (VIOLATION SAFE) ================= */
 function autoSubmitFromViolation(){
   if(isSubmitting) return;
-  isSubmitting=true;
-  clearInterval(timerRef); saveState();
+  isSubmitting = true;
 
-  const finalAnswers={};
+  clearInterval(timerRef);
+  saveState();
+
+  if(sessionStorage.getItem("answers")){
+    answers = JSON.parse(sessionStorage.getItem("answers"));
+  }
+
+  const finalAnswers = {};
   questions.forEach((q,i)=>{
-    finalAnswers[String(q[2]).trim()]=answers[i]?.ans||"";
+    finalAnswers[String(q[2]).trim()] =
+      answers[i]?.ans || "";
   });
 
   navigator.sendBeacon(
@@ -758,14 +800,23 @@ function autoSubmitFromViolation(){
 }
 
 /* ================= MANUAL SUBMIT ================= */
+function confirmSubmit(){
+  if(examLocked) return;
+  modal.style.display="flex";
+}
+function closeModal(){ modal.style.display="none"; }
+
 function submitExam(){
-  if(isSubmitting) return;
+  if(isSubmitting || examLocked) return;
   isSubmitting=true;
-  clearInterval(timerRef); saveState();
+
+  clearInterval(timerRef);
+  saveState();
 
   const finalAnswers={};
   questions.forEach((q,i)=>{
-    finalAnswers[String(q[2]).trim()]=answers[i]?.ans||"";
+    finalAnswers[String(q[2]).trim()] =
+      answers[i]?.ans || "";
   });
 
   fetch(WEBAPP_URL,{
@@ -799,13 +850,13 @@ function restoreState(){
   }
 }
 
-/* ================= CALCULATOR (RESTORED) ================= */
+/* ================= CALCULATOR ================= */
 const calculator=document.getElementById("calculator");
 const calcScreen=document.getElementById("calcScreen");
 
 function toggleCalc(){
-  calculator.style.display=
-    calculator.style.display==="block"?"none":"block";
+  calculator.style.display =
+    calculator.style.display==="block" ? "none" : "block";
 }
 
 let SHIFT=false,ANGLE="DEG",MEMORY=0,ANSWER=0;
@@ -834,15 +885,23 @@ function memClear(){MEMORY=0}
 function calculate(){
   try{
     const scope={
-      sin:x=>math.sin(conv(x)),cos:x=>math.cos(conv(x)),
-      tan:x=>math.tan(conv(x)),asin:math.asin,
-      acos:math.acos,atan:math.atan,
-      log:x=>math.log10(x),ln:x=>math.log(x),
-      sqrt:math.sqrt,pi:math.pi,e:math.e
+      sin:x=>math.sin(conv(x)),
+      cos:x=>math.cos(conv(x)),
+      tan:x=>math.tan(conv(x)),
+      asin:math.asin,
+      acos:math.acos,
+      atan:math.atan,
+      log:x=>math.log10(x),
+      ln:x=>math.log(x),
+      sqrt:math.sqrt,
+      pi:math.pi,
+      e:math.e
     };
     ANSWER=math.evaluate(calcScreen.value,scope);
     calcScreen.value=ANSWER;
-  }catch{calcScreen.value="Error"}
+  }catch{
+    calcScreen.value="Error";
+  }
 }
 function conv(x){
   if(ANGLE==="DEG")return math.unit(x,"deg");
@@ -850,7 +909,6 @@ function conv(x){
   return x;
 }
 </script>
-
 
 </body>
 </html> 

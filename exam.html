@@ -260,6 +260,7 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
   font-size:20px;       /* Bigger violation count */
   font-weight:700;
 }
+
 /* ================= CASIO FX-82ES PLUS THEME ================= */
 
 .calculator{
@@ -345,6 +346,8 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
   transform:translateY(2px);
   box-shadow:0 1px 0 #000;
 }
+
+
 /* ============ COMPACT MOBILE CASIO MODE ============ */
 @media (max-width:600px){
 
@@ -477,7 +480,7 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
  </div>
 </div>
 
-<div class="calculator" id="calculator">
+<<div class="calculator" id="calculator">
   <div class="casio-head">
     <span>CASIO</span>
     <span>fx-82ES PLUS</span>
@@ -545,6 +548,8 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
 
 <script>
 let timerStarted = false;
+let forceSubmitting = false;
+
 
  let examLoaded = false;
 let isSubmitting = false;
@@ -586,61 +591,25 @@ function violate(type,auto=false){
   body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
  });
  if (violations >= limit && questions.length > 0) {
- submitExam();
+  if (forceSubmitting) return;
+
+  forceSubmitting = true;
+
+  // 🔒 freeze UI + events
+  document.removeEventListener("visibilitychange", ()=>{});
+  window.onblur = null;
+
+  // ⛔ stop timer
+  clearInterval(timerRef);
+
+  // ⏳ small delay to allow state sync
+  setTimeout(()=>{
+    submitExam("VIOLATION_LIMIT");
+  }, 300);
+
 }
+
 }
-
-/* VIOLATIONS 
-function violate(type, auto=false){
-
-  // 🚫 ignore if already submitting
-  if (isSubmitting || forceSubmitting) return;
-
-  violations++;
-  vio.innerText = `${violations} / ${limit}`;
-
-  violationLog.push({
-    type,
-    time: new Date().toLocaleString()
-  });
-
-  proctorMsg.innerText =
-    `Violation: ${type} | Remaining: ${limit - violations}`;
-
-  overlay.classList.add("active");
-  setTimeout(()=>overlay.classList.remove("active"), 2000);
-
-  // 🔁 log violation (non-blocking)
-  fetch(WEBAPP_URL,{
-    method:"POST",
-    body:new URLSearchParams({
-      action:"violation",
-      exam_id,
-      roll_no:user.roll,
-      type
-    })
-  });
-
-  // 🔒 AUTO SUBMIT ON LIMIT (SAFE)
-  if (violations >= limit && questions.length > 0) {
-
-    if (forceSubmitting) return;
-    forceSubmitting = true;
-
-    freezeExamUI();        // 🔒 stop clicks
-    clearInterval(timerRef); // ⛔ stop timer
-    saveState();           // 💾 force answer save
-
-    // ⏳ allow JS stack to settle
-    setTimeout(()=>{
-      submitExam("VIOLATION_LIMIT");
-    }, 500);
-  }
-}*/
-
-
-
-
 
 /* ================= STRICT PROCTOR EVENTS ================= */
 
@@ -673,12 +642,11 @@ window.addEventListener("blur",()=>{
 
 /* ❌ Reload / refresh */
 window.addEventListener("beforeunload", (e)=>{
-  if(isSubmitting) return; // ✅ allow submit redirect
+  if(isSubmitting) return;
 
   if(questions.length > 0){
-    violate("Page Reload / Refresh");
     e.preventDefault();
-    e.returnValue = ""; // block accidental close
+    e.returnValue = "";
   }
 });
 
@@ -872,9 +840,10 @@ function startTimer(){
     const s = duration % 60;
     timer.innerText = `${m}:${String(s).padStart(2,"0")}`;
     duration--;
-    submitExwm();
+    saveState();
   },1000);
 }
+
 
 
 
@@ -882,84 +851,45 @@ function startTimer(){
 function confirmSubmit(){modal.style.display="flex"}
 function closeModal(){modal.style.display="none"}
 
-/*function submitExam(reason="USER_SUBMITTED"){
+function submitExam(reason="USER_SUBMITTED"){
   if (isSubmitting) return;
-  isSubmitting = true;
-
-  clearInterval(timerRef);
-  saveState();
-
-  const finalAnswers = {};
-  questions.forEach((q,i)=>{
-    finalAnswers[String(q[2]).trim()] = answers[i]?.ans ?? "";
-  });
-
-  fetch(WEBAPP_URL,{
-    method:"POST",
-    body:new URLSearchParams({
-      action:"submitExam",
-      exam_id,
-      roll_no:user.roll,
-      answers_json: JSON.stringify(finalAnswers),
-      violation_log: JSON.stringify(violationLog),
-      total_violations: violations,
-      submit_reason: reason
-    })
-  }).then(()=>{
-    sessionStorage.setItem("exam_completed","YES");
-    location.replace("summary.html");
-  });
-}*/
-
-
-function submitExam(){
-  if (isSubmitting) return;   // 🔒 HARD STOP
   isSubmitting = true;
 
   clearInterval(timerRef);   // ⛔ STOP TIMER
 
   const finalAnswers = {};
-  questions.forEach((q, i) => {
-    finalAnswers[String(q[2]).trim()] =
-      answers[i]?.ans || "";
-  });
 
-  fetch(WEBAPP_URL,{
-    method:"POST",
-    body:new URLSearchParams({
-      action:"submitExam",
-      exam_id,
-      roll_no:user.roll,
-      answers_json:JSON.stringify(finalAnswers),
-      violation_log:JSON.stringify(violationLog),
-      total_violations:violations
-    })
-  }).then(()=>{location.replace("summary.html"); // 🔁 SAFE REDIRECT
-  });
-}
-
-/*function submitExam(){
-  isSubmitting = true;   // ✅ critical
-
- const finalAnswers={};
 questions.forEach((q, i) => {
-  finalAnswers[String(q[2]).trim()] =
-    answers[i]?.ans || "";
+  const qid = String(q[2]).trim();
+  finalAnswers[qid] =
+    answers[i] && answers[i].ans ? answers[i].ans : "";
 });
 
 
- fetch(WEBAPP_URL,{method:"POST",
+  fetch(WEBAPP_URL,{
+  method:"POST",
   body:new URLSearchParams({
-   action:"submitExam",
-   exam_id,
-   roll_no:user.roll,
-   answers_json:JSON.stringify(finalAnswers),
-   violation_log:JSON.stringify(violationLog),
-   total_violations:violations,
-   //status:"SUBMITTED"
+    action:"submitExam",
+    exam_id,
+    roll_no:user.roll,
+    answers_json: JSON.stringify(finalAnswers),
+    violation_log: JSON.stringify(violationLog),
+    total_violations: violations,
+    submit_reason: reason   // ✅ NEW
   })
- }).then(()=>location.href="summary.html");
-}*/
+})
+
+.then(()=>{
+  sessionStorage.setItem("exam_completed", "YES");   // ✅ FLAG
+  location.replace("summary.html");
+});
+
+
+/*.then(()=>{
+    sessionStorage.clear();  // 🧹 CLEAN STATE
+    location.replace("summary.html"); // 🔁 SAFE REDIRECT
+  });*/
+}
 
 function saveState(){
  sessionStorage.setItem("answers", JSON.stringify(answers));
@@ -991,14 +921,6 @@ function restoreState(){
    vio.innerText=`${violations} / ${limit}`;
  }
 }
-
-/* CALCULATOR */
-function toggleCalc(){
- calculator.style.display=calculator.style.display=="block"?"none":"block";
-}
-
-const calculator = document.getElementById("calculator");
-const calcScreen = document.getElementById("calcScreen");
 
 let SHIFT=false;
 let ANGLE="DEG";

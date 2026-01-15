@@ -832,7 +832,7 @@ function startTimer(){
 function confirmSubmit(){modal.style.display="flex"}
 function closeModal(){modal.style.display="none"}
 
-function submitExam(){
+/*function submitExam(){
   if (isSubmitting) return;
   isSubmitting = true;
 
@@ -867,7 +867,52 @@ function submitExam(){
     alert("Submission failed. Please contact exam admin.");
     isSubmitting = false; // allow retry
   });
+}*/
+
+async function submitExam(){
+  if (isSubmitting) return;
+  isSubmitting = true;
+
+  clearInterval(timerRef);
+  saveState();   // 💾 ensure latest answers
+
+  const finalAnswers = {};
+  questions.forEach((q, i) => {
+    finalAnswers[String(q[2]).trim()] =
+      answers[i]?.ans || "";
+  });
+
+  const formData = new URLSearchParams();
+  formData.append("action", "submitExam");
+  formData.append("exam_id", exam_id);
+  formData.append("roll_no", user.roll);
+  formData.append("answers_json", JSON.stringify(finalAnswers));
+  formData.append("violation_log", JSON.stringify(violationLog));
+  formData.append("total_violations", violations);
+  formData.append("status", "SUBMITTED");
+
+  try {
+    // 🔒 disable unload blocker temporarily
+    window.onbeforeunload = null;
+
+    // ✅ WAIT until Apps Script receives data
+    await fetch(WEBAPP_URL, {
+      method: "POST",
+      body: formData
+    });
+
+    // ⏱ tiny delay for GAS commit safety
+    setTimeout(() => {
+      location.href = "summary.html";
+    }, 300);
+
+  } catch (err) {
+    console.error("Submit failed", err);
+    alert("Submission failed. Please contact exam admin.");
+    isSubmitting = false;
+  }
 }
+
 
 
 function autoSubmitFromViolation(){

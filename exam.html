@@ -550,6 +550,7 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
 let timerStarted = false;
 let forceSubmitting = false;
 
+
  let examLoaded = false;
 let isSubmitting = false;
 
@@ -578,43 +579,37 @@ document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
 /* VIOLATIONS */
-function violate(type){
-  if (isSubmitting || forceSubmitting) return;
+function violate(type,auto=false){
+ violations++;
+ vio.innerText=`${violations} / ${limit}`;
+ violationLog.push({type,time:new Date().toLocaleString()});
+ proctorMsg.innerText =
+  `Violation: ${type} | Remaining: ${limit - violations}`;
+ overlay.classList.add("active");
+ setTimeout(()=>overlay.classList.remove("active"),2000);
+ fetch(WEBAPP_URL,{method:"POST",
+  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
+ });
+ if (violations >= limit && questions.length > 0) {
+  if (forceSubmitting) return;
 
-  violations++;
-  vio.innerText = `${violations} / ${limit}`;
-  violationLog.push({ type, time: new Date().toLocaleString() });
+  forceSubmitting = true;
 
-  proctorMsg.innerText =
-    `Violation: ${type} | Remaining: ${limit - violations}`;
-  overlay.classList.add("active");
-  setTimeout(()=>overlay.classList.remove("active"),2000);
+  // 🔒 freeze UI + events
+  document.removeEventListener("visibilitychange", ()=>{});
+  window.onblur = null;
 
-  // 🔔 log violation (non-blocking)
-  fetch(WEBAPP_URL,{
-    method:"POST",
-    body:new URLSearchParams({
-      action:"violation",
-      exam_id,
-      roll_no:user.roll,
-      type
-    })
-  });
+  // ⛔ stop timer
+  clearInterval(timerRef);
 
-  // 🚨 FORCE SUBMIT ON LIMIT
-  if (violations >= limit) {
-    forceSubmitting = true;
+  // ⏳ small delay to allow state sync
+  setTimeout(()=>{
+    submitExam("VIOLATION_LIMIT");
+  }, 300);
 
-    clearInterval(timerRef);          // ⛔ stop timer
-    submitBtn.disabled = true;        // 🔒 lock UI
-
-    // ⏳ allow state sync before submit
-    setTimeout(()=>{
-      submitExam("VIOLATION_LIMIT");
-    }, 300);
-  }
 }
 
+}
 
 /* ================= STRICT PROCTOR EVENTS ================= */
 
@@ -647,7 +642,7 @@ window.addEventListener("blur",()=>{
 
 /* ❌ Reload / refresh */
 window.addEventListener("beforeunload", (e)=>{
-  if (isSubmitting || forceSubmitting) return;
+  if(isSubmitting) return;
 
   if(questions.length > 0){
     e.preventDefault();
@@ -857,8 +852,7 @@ function confirmSubmit(){modal.style.display="flex"}
 function closeModal(){modal.style.display="none"}
 
 function submitExam(reason="USER_SUBMITTED"){
-
-  if (isSubmitting) return;   // 🔒 HARD STOP
+  if (isSubmitting) return;
   isSubmitting = true;
 
   clearInterval(timerRef);   // ⛔ STOP TIMER
@@ -868,7 +862,7 @@ function submitExam(reason="USER_SUBMITTED"){
 questions.forEach((q, i) => {
   const qid = String(q[2]).trim();
   finalAnswers[qid] =
-    (answers[i] && answers[i].ans) ? answers[i].ans : "";
+    answers[i] && answers[i].ans ? answers[i].ans : "";
 });
 
 
@@ -881,11 +875,12 @@ questions.forEach((q, i) => {
     answers_json: JSON.stringify(finalAnswers),
     violation_log: JSON.stringify(violationLog),
     total_violations: violations,
-    submit_reason: reason   // ✅ ADD THIS
+    submit_reason: reason   // ✅ NEW
   })
 })
+
 .then(()=>{
-  sessionStorage.setItem("exam_completed","YES");
+  sessionStorage.setItem("exam_completed", "YES");   // ✅ FLAG
   location.replace("summary.html");
 });
 
@@ -908,7 +903,7 @@ function restoreState(){
  const savedSig = sessionStorage.getItem("qSignature");
  const currentSig = questions.map(q=>q[2]).join(",");
 
-  if(savedSig !== currentSig){
+ if(savedSig !== currentSig){
  sessionStorage.removeItem("answers");
  sessionStorage.removeItem("index");
  sessionStorage.removeItem("timeLeft");

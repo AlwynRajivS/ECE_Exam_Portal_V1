@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -30,18 +30,18 @@ header{
  box-shadow:0 8px 22px rgba(0,0,0,.35);
 }
 
+.container{
+ max-width:720px;
+ margin:30px auto;
+ padding:20px;
+}
+
 /* ================= FOOTER ================= */
 .footer {
   text-align: center;
   margin-top: 18px;
   font-size: 12px;
   color: #777;
-}
-
-.container{
- max-width:720px;
- margin:30px auto;
- padding:20px;
 }
 
 .card{
@@ -93,28 +93,32 @@ header{
  color:#fff;
  font-weight:700;
  font-size:13px;
- background:linear-gradient(135deg,#2e7d32,#66bb6a);
 }
+.pass{background:linear-gradient(135deg,#2e7d32,#66bb6a)}
+.fail{background:linear-gradient(135deg,#c62828,#ef5350)}
 
 canvas{margin-top:20px}
 
-.footer-btn{
- margin-top:28px;
+.footer-btns{
+ margin-top:26px;
+ display:flex;
+ gap:12px;
 }
-.footer-btn button{
- width:100%;
+.footer-btns button{
+ flex:1;
  padding:14px;
  border:none;
  border-radius:18px;
  color:#fff;
- font-size:15px;
+ font-size:14px;
  cursor:pointer;
  display:flex;
  align-items:center;
  justify-content:center;
- gap:10px;
- background:linear-gradient(135deg,#546e7a,#90a4ae);
+ gap:8px;
 }
+.review{background:linear-gradient(135deg,#1976d2,#42a5f5)}
+.dashboard{background:linear-gradient(135deg,#546e7a,#90a4ae)}
 
 @media(max-width:520px){
  .stats{grid-template-columns:1fr}
@@ -155,13 +159,14 @@ canvas{margin-top:20px}
     Marks Scored: <span id="marks"></span>
   </h3>
 
-  <span class="badge">SUBMITTED</span>
+  <span id="statusBadge" class="badge"></span>
 
   <canvas id="chart" height="180"></canvas>
 
-  <div class="footer-btn">
-    <button onclick="goDashboard()">
-      <i class="fa-solid fa-house"></i> Go to Dashboard
+  <div class="footer-btns">
+    
+    <button class="dashboard" onclick="location.href='student_dashboard.html'">
+      <i class="fa-solid fa-house"></i> Dashboard
     </button>
   </div>
 
@@ -178,10 +183,6 @@ const WEBAPP_URL =
 
 const user = JSON.parse(sessionStorage.getItem("user"));
 const exam_id = sessionStorage.getItem("exam_id");
-
-/* 🔒 FORCE BACK BUTTON TO DASHBOARD */
-history.pushState(null, null, location.href);
-window.onpopstate = () => goDashboard();
 
 studentInfo.innerHTML = `👨‍🎓 ${user.name} (${user.roll})`;
 examInfo.innerHTML = `📝 Exam ID: ${exam_id}`;
@@ -208,21 +209,27 @@ Promise.all([
 
  const marks = r[2];
  const vio = r[3];
+ const status = r[4];
 
  const responseRow = responses[0];
  const answers = responseRow ? JSON.parse(responseRow[2]) : {};
 
+ const totalQ = Object.keys(answers).length;
  let answered = 0, unanswered = 0;
+
  Object.values(answers).forEach(a=>{
    if(a === "") unanswered++;
    else answered++;
  });
 
- document.getElementById("totalQ").innerText = Object.keys(answers).length;
+ document.getElementById("totalQ").innerText = totalQ;
  document.getElementById("answered").innerText = answered;
  document.getElementById("unanswered").innerText = unanswered;
  document.getElementById("violations").innerText = vio;
  document.getElementById("marks").innerText = marks;
+
+ statusBadge.innerText = status;
+ statusBadge.className = "badge " + (status==="SUBMITTED"?"pass":"fail");
 
  new Chart(document.getElementById("chart"),{
   type:"bar",
@@ -240,10 +247,6 @@ Promise.all([
   }
  });
 });
-
-function goDashboard(){
- location.replace("student_dashboard.html");
-}
 </script>
 
 </body>

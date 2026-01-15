@@ -834,37 +834,54 @@ function confirmSubmit(){modal.style.display="flex"}
 function closeModal(){modal.style.display="none"}
 
 function submitExam(){
-if (isSubmitting) return;   // 🔒 HARD STOP
+  if (isSubmitting) return;
   isSubmitting = true;
 
-  clearInterval(timerRef);   // ⛔ STOP
+  clearInterval(timerRef);
+  saveState();   // 💾 ensure latest answers
 
- const finalAnswers={};
-questions.forEach((q, i) => {
-  finalAnswers[String(q[2]).trim()] =
-    answers[i]?.ans || "";
-});
+  const finalAnswers = {};
+  questions.forEach((q, i) => {
+    finalAnswers[String(q[2]).trim()] =
+      answers[i]?.ans || "";
+  });
 
+  // ✅ GUARANTEED DELIVERY
+  navigator.sendBeacon(
+    WEBAPP_URL,
+    new URLSearchParams({
+      action: "submitExam",
+      exam_id,
+      roll_no: user.roll,
+      answers_json: JSON.stringify(finalAnswers),
+      violation_log: JSON.stringify(violationLog),
+      total_violations: violations,
+      status: "SUBMITTED"
+    })
+  );
 
- fetch(WEBAPP_URL,{method:"POST",
-  body:new URLSearchParams({
-   action:"submitExam",
-   exam_id,
-   roll_no:user.roll,
-   answers_json:JSON.stringify(finalAnswers),
-   violation_log:JSON.stringify(violationLog),
-   total_violations:violations,
-   //status:"SUBMITTED"
-  })
- }).then(()=>location.href="summary.html");
+  // ⏱ allow beacon to flush before redirect
+  setTimeout(() => {
+    location.replace("summary.html");
+  }, 800);
 }
 
 function saveState(){
- sessionStorage.setItem("answers", JSON.stringify(answers));
- sessionStorage.setItem("index", index);
- sessionStorage.setItem("timeLeft", duration);
- sessionStorage.setItem("violations", violations);
+  try{
+    // 🔑 question signature (VERY IMPORTANT)
+    const qSignature = questions.map(q => String(q[2]).trim()).join(",");
 
+    sessionStorage.setItem("qSignature", qSignature);
+    sessionStorage.setItem("answers", JSON.stringify(answers || {}));
+    sessionStorage.setItem("index", String(index));
+    sessionStorage.setItem("timeLeft", String(duration));
+    sessionStorage.setItem("violations", String(violations));
+
+    // optional but useful for debugging / safety
+    sessionStorage.setItem("lastSaved", new Date().toISOString());
+  }catch(e){
+    console.error("saveState failed", e);
+  }
 }
 
 function restoreState(){

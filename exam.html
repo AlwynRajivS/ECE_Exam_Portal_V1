@@ -480,7 +480,7 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
  </div>
 </div>
 
-<div class="calculator" id="calculator">
+<<div class="calculator" id="calculator">
   <div class="casio-head">
     <span>CASIO</span>
     <span>fx-82ES PLUS</span>
@@ -548,8 +548,6 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
 
 <script>
 let timerStarted = false;
-let forceSubmitting = false;
-
 
  let examLoaded = false;
 let isSubmitting = false;
@@ -579,49 +577,21 @@ document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
 /* VIOLATIONS */
-function violate(type, auto=false){
+function violate(type,auto=false){
+ violations++;
+ vio.innerText=`${violations} / ${limit}`;
+ violationLog.push({type,time:new Date().toLocaleString()});
+ proctorMsg.innerText =
+  `Violation: ${type} | Remaining: ${limit - violations}`;
+ overlay.classList.add("active");
+ setTimeout(()=>overlay.classList.remove("active"),2000);
+ fetch(WEBAPP_URL,{method:"POST",
+  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
+ });
+ if (violations >= limit && questions.length > 0) {
+ submitExam();
+}
 
-  if (isSubmitting || forceSubmitting) return; // 🚫 ignore late events
-
-  violations++;
-  vio.innerText = `${violations} / ${limit}`;
-
-  violationLog.push({
-    type,
-    time: new Date().toLocaleString()
-  });
-
-  proctorMsg.innerText =
-    `Violation: ${type} | Remaining: ${limit - violations}`;
-
-  overlay.classList.add("active");
-  setTimeout(()=>overlay.classList.remove("active"), 2000);
-
-  // 🔁 log to backend (non-blocking)
-  fetch(WEBAPP_URL,{
-    method:"POST",
-    body:new URLSearchParams({
-      action:"violation",
-      exam_id,
-      roll_no:user.roll,
-      type
-    })
-  });
-
-  // 🔒🔥 FINAL AUTO-SUBMIT ON LIMIT
-  if (violations >= limit && questions.length > 0) {
-
-    if (forceSubmitting) return;
-    forceSubmitting = true;
-
-    freezeExamUI();        // 🔒 LOCK UI INPUTS
-    clearInterval(timerRef); // ⛔ STOP TIMER
-    saveState();           // 💾 FORCE ANSWER SAVE
-
-    setTimeout(()=>{
-      submitExam("VIOLATION_LIMIT");
-    }, 500);               // ⏳ allow JS state flush
-  }
 }
 
 /* ================= STRICT PROCTOR EVENTS ================= */
@@ -858,34 +828,22 @@ function startTimer(){
 }
 
 
-function freezeExamUI(){
-  document.querySelectorAll(".option").forEach(o=>{
-    o.onclick = null;
-    o.style.pointerEvents = "none";
-  });
-
-  document.querySelectorAll("button").forEach(b=>{
-    b.disabled = true;
-  });
-}
 
 
 /* SUBMIT */
 function confirmSubmit(){modal.style.display="flex"}
 function closeModal(){modal.style.display="none"}
 
-function submitExam(reason="USER_SUBMITTED"){
-  if (isSubmitting) return;
+function submitExam(){
+  if (isSubmitting) return;   // 🔒 HARD STOP
   isSubmitting = true;
 
-  clearInterval(timerRef);
-  saveState(); // 🔥 CRITICAL
+  clearInterval(timerRef);   // ⛔ STOP TIMER
 
   const finalAnswers = {};
-
   questions.forEach((q, i) => {
-    const qid = String(q[2]).trim();
-    finalAnswers[qid] = answers[i]?.ans ?? "";
+    finalAnswers[String(q[2]).trim()] =
+      answers[i]?.ans || "";
   });
 
   fetch(WEBAPP_URL,{
@@ -894,24 +852,22 @@ function submitExam(reason="USER_SUBMITTED"){
       action:"submitExam",
       exam_id,
       roll_no:user.roll,
-      answers_json: JSON.stringify(finalAnswers),
-      violation_log: JSON.stringify(violationLog),
-      total_violations: violations,
-      submit_reason: reason
+      answers_json:JSON.stringify(finalAnswers),
+      violation_log:JSON.stringify(violationLog),
+      total_violations:violations
     })
   })
-  .then(()=>{
-    sessionStorage.setItem("exam_completed", "YES");
-    location.replace("summary.html");
-  });
-}
-
+.then(()=>{
+  sessionStorage.setItem("exam_completed", "YES");   // ✅ FLAG
+  location.replace("summary.html");
+});
 
 
 /*.then(()=>{
     sessionStorage.clear();  // 🧹 CLEAN STATE
     location.replace("summary.html"); // 🔁 SAFE REDIRECT
   });*/
+}
 
 function saveState(){
  sessionStorage.setItem("answers", JSON.stringify(answers));
@@ -925,7 +881,7 @@ function restoreState(){
  const savedSig = sessionStorage.getItem("qSignature");
  const currentSig = questions.map(q=>q[2]).join(",");
 
- if(savedSig !== currentSig){
+  if(savedSig !== currentSig){
  sessionStorage.removeItem("answers");
  sessionStorage.removeItem("index");
  sessionStorage.removeItem("timeLeft");

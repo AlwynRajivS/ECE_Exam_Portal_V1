@@ -547,6 +547,7 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
 
 <script>
 let timerStarted = false;
+let examLocked = false;   // 🔒 stops further violations
 
  let examLoaded = false;
 let isSubmitting = false;
@@ -576,24 +577,34 @@ document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
 /* VIOLATIONS */
-function violate(type,auto=false){
- violations++;
- vio.innerText=`${violations} / ${limit}`;
- violationLog.push({type,time:new Date().toLocaleString()});
- proctorMsg.innerText =
-  `Violation: ${type} | Remaining: ${limit - violations}`;
- overlay.classList.add("active");
- setTimeout(()=>overlay.classList.remove("active"),2000);
- fetch(WEBAPP_URL,{method:"POST",
-  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
- });
- if (violations >= limit) {
-  autoSubmitFromViolation();
+function violate(type){
+  if (examLocked || isSubmitting) return;  // 🔒 STOP EVERYTHING
+
+  violations++;
+  vio.innerText = `${violations} / ${limit}`;
+  violationLog.push({ type, time: new Date().toLocaleString() });
+
+  proctorMsg.innerText =
+    `Violation: ${type} | Remaining: ${limit - violations}`;
+  overlay.classList.add("active");
+  setTimeout(()=>overlay.classList.remove("active"),2000);
+
+  fetch(WEBAPP_URL,{
+    method:"POST",
+    body:new URLSearchParams({
+      action:"violation",
+      exam_id,
+      roll_no:user.roll,
+      type
+    })
+  });
+
+  if (violations >= limit) {
+    examLocked = true;              // 🔒 CRITICAL
+    autoSubmitFromViolation();
+  }
 }
 
-
-
-}
 
 /* ================= STRICT PROCTOR EVENTS ================= */
 
@@ -867,12 +878,12 @@ function submitExam(){
   });
 }
 
-function autoSubmitFromViolation(){
+async function autoSubmitFromViolation(){
   if (isSubmitting) return;
   isSubmitting = true;
 
   clearInterval(timerRef);
-  saveState();   // 💾 ensure answers exist in session
+  saveState();
 
   const finalAnswers = {};
   questions.forEach((q, i) => {
@@ -889,16 +900,18 @@ function autoSubmitFromViolation(){
   formData.append("total_violations", violations);
   formData.append("status", "AUTO_SUBMITTED");
 
-  // 🚨 DO NOT REDIRECT UNTIL REQUEST IS SENT
-  fetch(WEBAPP_URL, {
-    method: "POST",
-    body: formData
-  });
+  try{
+    // ✅ WAIT until GAS confirms receipt
+    await fetch(WEBAPP_URL, {
+      method: "POST",
+      body: formData
+    });
+  }catch(e){
+    console.error("Auto submit failed", e);
+  }
 
-  // ⏱ delayed redirect gives GAS time to commit
-  setTimeout(() => {
-    location.href = "summary.html";
-  }, 1200);
+  // ⏱ NOW it is safe to navigate
+  location.href = "summary.html";
 }
 
 

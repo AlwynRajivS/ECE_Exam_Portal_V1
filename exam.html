@@ -234,6 +234,170 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
  .main{flex-direction:column}
  .palette{width:100%;border-left:none;border-top:1px solid #ddd}
 }
+
+/* ⏱ TIMER CHIP */
+.chip.time{
+  background:#1e88e5;   /* Blue */
+  color:#fff;
+  font-size:15px;
+  padding:6px 14px;
+}
+
+.chip.time span{
+  font-size:20px;       /* Bigger timer number */
+  font-weight:700;
+}
+
+/* ⚠ VIOLATION CHIP */
+.chip.vio{
+  background:#c62828;   /* Red */
+  color:#fff;
+  font-size:15px;
+  padding:6px 14px;
+}
+
+.chip.vio span{
+  font-size:20px;       /* Bigger violation count */
+  font-weight:700;
+}
+/* ================= CASIO FX-82ES PLUS THEME ================= */
+
+.calculator{
+  background:#0f1113;               /* Casio black body */
+  border-radius:20px;
+  box-shadow:0 20px 45px rgba(0,0,0,.7);
+  border:2px solid #1c1f22;
+}
+
+/* CASIO BRAND HEADER */
+.casio-head{
+  display:flex;
+  justify-content:space-between;
+  font-weight:700;
+  font-size:14px;
+  color:#e0e0e0;
+  margin-bottom:8px;
+}
+
+/* LCD SCREEN */
+.casio-screen{
+  background:#e6f3c6;               /* Casio green LCD */
+  border:2px solid #9eb37a;
+  border-radius:6px;
+  padding:8px;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.2);
+}
+
+.casio-screen input{
+  color:#000;
+  font-family:"Digital-7", monospace;
+  font-size:22px;
+}
+
+/* MODE TEXT */
+.casio-screen .mode{
+  font-size:11px;
+  font-weight:600;
+  color:#2e7d32;
+}
+
+/* BUTTON GRID */
+.casio-grid button{
+  background:#2b2f33;               /* dark grey keys */
+  color:#fff;
+  border-radius:8px;
+  box-shadow:0 3px 0 #111;
+  font-weight:600;
+}
+
+/* NUMBER KEYS */
+.casio-grid button:nth-child(n+13):nth-child(-n+28){
+  background:#3a3f44;               /* lighter grey */
+}
+
+/* OPERATOR KEYS */
+.casio-grid button:contains("+"),
+.casio-grid button:contains("−"),
+.casio-grid button:contains("×"),
+.casio-grid button:contains("÷"){
+  background:#4b4f55;
+}
+
+/* SHIFT KEY */
+.casio-grid button.shift{
+  background:#616161;
+  color:#ffeb3b;
+}
+
+/* EQUAL KEY */
+.casio-grid button.eq{
+  background:#2e7d32;               /* green = key */
+  color:#fff;
+}
+
+/* MEMORY KEYS */
+.casio-grid button:nth-last-child(-n+4){
+  background:#455a64;
+}
+
+/* PRESS EFFECT */
+.casio-grid button:active{
+  transform:translateY(2px);
+  box-shadow:0 1px 0 #000;
+}
+/* ============ COMPACT MOBILE CASIO MODE ============ */
+@media (max-width:600px){
+
+  .calculator{
+    width:260px;               /* compact width */
+    right:10px;
+    bottom:10px;
+    padding:10px;
+    border-radius:16px;
+  }
+
+  /* CASIO HEADER */
+  .casio-head{
+    font-size:12px;
+    margin-bottom:6px;
+  }
+
+  /* LCD SCREEN */
+  .casio-screen{
+    padding:6px;
+    margin-bottom:8px;
+  }
+
+  .casio-screen input{
+    font-size:18px;            /* smaller digits */
+  }
+
+  .casio-screen .mode{
+    font-size:10px;
+  }
+
+  /* BUTTON GRID */
+  .casio-grid{
+    gap:6px;
+  }
+
+  .casio-grid button{
+    padding:9px;               /* compact keys */
+    font-size:12px;
+    border-radius:6px;
+  }
+
+  /* SHIFT key highlight */
+  .casio-grid button.shift{
+    font-size:11px;
+  }
+
+  /* EQUAL key */
+  .casio-grid button.eq{
+    font-size:14px;
+  }
+}
+
 </style>
 </head>
 
@@ -314,42 +478,64 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
 </div>
 
 <div class="calculator" id="calculator">
-  <input class="calc-screen" id="calcScreen" readonly>
-
-  <div style="display:flex;flex-wrap:wrap;gap:6px">
-    <button class="calc-btn" onclick="calc('sin(')">sin</button>
-    <button class="calc-btn" onclick="calc('cos(')">cos</button>
-    <button class="calc-btn" onclick="calc('tan(')">tan</button>
-    <button class="calc-btn" onclick="calc('log(')">log</button>
-
-    <button class="calc-btn" onclick="calc('7')">7</button>
-    <button class="calc-btn" onclick="calc('8')">8</button>
-    <button class="calc-btn" onclick="calc('9')">9</button>
-    <button class="calc-btn" onclick="calc('/')">÷</button>
-
-    <button class="calc-btn" onclick="calc('4')">4</button>
-    <button class="calc-btn" onclick="calc('5')">5</button>
-    <button class="calc-btn" onclick="calc('6')">6</button>
-    <button class="calc-btn" onclick="calc('*')">×</button>
-
-    <button class="calc-btn" onclick="calc('1')">1</button>
-    <button class="calc-btn" onclick="calc('2')">2</button>
-    <button class="calc-btn" onclick="calc('3')">3</button>
-    <button class="calc-btn" onclick="calc('-')">−</button>
-
-    <button class="calc-btn" onclick="calc('0')">0</button>
-    <button class="calc-btn" onclick="calc('.')">.</button>
-    <button class="calc-btn" onclick="calculate()">=</button>
-    <button class="calc-btn" onclick="calc('+')">+</button>
-<button class="calc-btn" onclick="calc('sqrt(')">√</button>
-<button class="calc-btn" onclick="calc('pi')">π</button>
-<button class="calc-btn" onclick="calc('^')">xʸ</button>
-<button class="calc-btn" onclick="calc('ln(')">ln</button>
-
-    <button class="calc-btn" onclick="clearCalc()">C</button>
-    <button class="calc-btn" onclick="calc('(')">(</button>
-    <button class="calc-btn" onclick="calc(')')">)</button>
+  <div class="casio-head">
+    <span>CASIO</span>
+    <span>fx-82ES PLUS</span>
   </div>
+
+  <div class="casio-screen">
+    <input id="calcScreen" readonly>
+    <div class="mode" id="mode">DEG</div>
+  </div>
+
+  <div class="casio-grid">
+    <button class="shift" onclick="toggleShift()">SHIFT</button>
+    <button onclick="toggleAngle()">DRG</button>
+    <button onclick="clearCalc()">AC</button>
+    <button onclick="del()">DEL</button>
+
+    <button onclick="fn('sin')">sin</button>
+    <button onclick="fn('cos')">cos</button>
+    <button onclick="fn('tan')">tan</button>
+    <button onclick="fn('log')">log</button>
+
+    <button onclick="fn('ln')">ln</button>
+    <button onclick="calc('(')">(</button>
+    <button onclick="calc(')')">)</button>
+    <button onclick="calc('^')">xʸ</button>
+
+    <button onclick="calc('7')">7</button>
+    <button onclick="calc('8')">8</button>
+    <button onclick="calc('9')">9</button>
+    <button onclick="calc('/')">÷</button>
+
+    <button onclick="calc('4')">4</button>
+    <button onclick="calc('5')">5</button>
+    <button onclick="calc('6')">6</button>
+    <button onclick="calc('*')">×</button>
+
+    <button onclick="calc('1')">1</button>
+    <button onclick="calc('2')">2</button>
+    <button onclick="calc('3')">3</button>
+    <button onclick="calc('-')">−</button>
+
+    <button onclick="calc('0')">0</button>
+    <button onclick="calc('.')">.</button>
+    <button onclick="ans()">Ans</button>
+    <button onclick="calc('+')">+</button>
+
+    <button onclick="calc('pi')">π</button>
+    <button onclick="calc('e')">e</button>
+    <button onclick="sqrt()">√</button>
+    <button class="eq" onclick="calculate()">=</button>
+
+    <button onclick="memAdd()">M+</button>
+    <button onclick="memSub()">M-</button>
+    <button onclick="memRecall()">MR</button>
+    <button onclick="memClear()">MC</button>
+  </div>
+</div>
+
 
   <div class="footer">
     © KCET - ECE Online Examination System
@@ -404,9 +590,7 @@ function violate(type,auto=false){
 }
 
 
-if (violations >= limit && questions.length > 0) {
- submitExam();
-}
+
 
 }
 
@@ -626,16 +810,21 @@ function nextQ(){
 let timerRef=null;
 
 function startTimer(){
-  if(timerStarted) return;   // ⛔ prevents duplicate timers
+  if(timerStarted) return;
   timerStarted = true;
 
   timerRef = setInterval(()=>{
+    if(duration <= 0){
+      clearInterval(timerRef);
+      submitExam();
+      return;
+    }
+
     const m = Math.floor(duration / 60);
     const s = duration % 60;
     timer.innerText = `${m}:${String(s).padStart(2,"0")}`;
     duration--;
     saveState();
-    if(duration < 0) submitExam();
   },1000);
 }
 
@@ -646,6 +835,33 @@ function confirmSubmit(){modal.style.display="flex"}
 function closeModal(){modal.style.display="none"}
 
 function submitExam(){
+  if (isSubmitting) return;   // 🔒 HARD STOP
+  isSubmitting = true;
+
+  clearInterval(timerRef);   // ⛔ STOP TIMER
+
+  const finalAnswers = {};
+  questions.forEach((q, i) => {
+    finalAnswers[String(q[2]).trim()] =
+      answers[i]?.ans || "";
+  });
+
+  fetch(WEBAPP_URL,{
+    method:"POST",
+    body:new URLSearchParams({
+      action:"submitExam",
+      exam_id,
+      roll_no:user.roll,
+      answers_json:JSON.stringify(finalAnswers),
+      violation_log:JSON.stringify(violationLog),
+      total_violations:violations
+    })
+  }).then(()=>{location.replace("summary.html"); // 🔁 SAFE REDIRECT
+  });
+}
+
+
+/*function submitExam(){
   isSubmitting = true;   // ✅ critical
 
  const finalAnswers={};
@@ -666,7 +882,7 @@ questions.forEach((q, i) => {
    //status:"SUBMITTED"
   })
  }).then(()=>location.href="summary.html");
-}
+}*/
 
 function saveState(){
  sessionStorage.setItem("answers", JSON.stringify(answers));
@@ -707,38 +923,83 @@ function toggleCalc(){
 const calculator = document.getElementById("calculator");
 const calcScreen = document.getElementById("calcScreen");
 
-/* Toggle */
-function toggleCalc(){
-  calculator.style.display =
-    calculator.style.display === "block" ? "none" : "block";
+let SHIFT=false;
+let ANGLE="DEG";
+let MEMORY=0;
+let ANSWER=0;
+
+function toggleShift(){
+  SHIFT=!SHIFT;
 }
 
-/* Append value */
+function toggleAngle(){
+  ANGLE = ANGLE==="DEG" ? "RAD" : ANGLE==="RAD" ? "GRAD" : "DEG";
+  document.getElementById("mode").innerText = ANGLE;
+}
+
 function calc(v){
   calcScreen.value += v;
 }
 
-/* Clear */
-function clearCalc(){
-  calcScreen.value = "";
+function fn(f){
+  if(SHIFT){
+    if(f==="sin") calcScreen.value+="asin(";
+    if(f==="cos") calcScreen.value+="acos(";
+    if(f==="tan") calcScreen.value+="atan(";
+    SHIFT=false;
+  }else{
+    calcScreen.value+=f+"(";
+  }
 }
 
-/* SAFE CALCULATION USING MATH.JS */
+function sqrt(){
+  calcScreen.value+="sqrt(";
+}
+
+function del(){
+  calcScreen.value=calcScreen.value.slice(0,-1);
+}
+
+function clearCalc(){
+  calcScreen.value="";
+}
+
+function ans(){
+  calcScreen.value+=ANSWER;
+}
+
+function memAdd(){ MEMORY+=Number(calcScreen.value||0); }
+function memSub(){ MEMORY-=Number(calcScreen.value||0); }
+function memRecall(){ calcScreen.value+=MEMORY; }
+function memClear(){ MEMORY=0; }
+
 function calculate(){
   try{
-    const result = math.evaluate(calcScreen.value, {
-      sin: math.sin,
-      cos: math.cos,
-      tan: math.tan,
-      log: math.log10,   // base-10
-      ln: math.log,      // natural log
-      pi: math.pi,
-      e: math.e
-    });
-    calcScreen.value = result;
-  }catch(err){
-    calcScreen.value = "Error";
+    let scope={
+      sin:x=>math.sin(conv(x)),
+      cos:x=>math.cos(conv(x)),
+      tan:x=>math.tan(conv(x)),
+      asin:x=>math.asin(x),
+      acos:x=>math.acos(x),
+      atan:x=>math.atan(x),
+      log:x=>math.log10(x),
+      ln:x=>math.log(x),
+      pi:math.pi,
+      e:math.e,
+      sqrt:x=>math.sqrt(x)
+    };
+    let res=math.evaluate(calcScreen.value,scope);
+    ANSWER=res;
+    calcScreen.value=res;
+  }catch{
+    calcScreen.value="Error";
   }
+}
+
+function conv(x){
+  if(ANGLE==="DEG") return math.unit(x,"deg");
+  if(ANGLE==="GRAD") return math.unit(x*0.9,"deg");
+  return x;
 }
 
 

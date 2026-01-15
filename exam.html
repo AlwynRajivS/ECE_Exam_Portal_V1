@@ -647,7 +647,7 @@ window.addEventListener("blur",()=>{
 
 /* ❌ Reload / refresh */
 window.addEventListener("beforeunload", (e)=>{
-  if(isSubmitting) return;
+  if (isSubmitting || forceSubmitting) return;
 
   if(questions.length > 0){
     e.preventDefault();
@@ -873,18 +873,19 @@ questions.forEach((q, i) => {
 
 
   fetch(WEBAPP_URL,{
-    method:"POST",
-    body:new URLSearchParams({
-      action:"submitExam",
-      exam_id,
-      roll_no:user.roll,
-      answers_json:JSON.stringify(finalAnswers),
-      violation_log:JSON.stringify(violationLog),
-      total_violations:violations
-    })
+  method:"POST",
+  body:new URLSearchParams({
+    action:"submitExam",
+    exam_id,
+    roll_no:user.roll,
+    answers_json: JSON.stringify(finalAnswers),
+    violation_log: JSON.stringify(violationLog),
+    total_violations: violations,
+    submit_reason: reason   // ✅ ADD THIS
   })
+})
 .then(()=>{
-  sessionStorage.setItem("exam_completed", "YES");   // ✅ FLAG
+  sessionStorage.setItem("exam_completed","YES");
   location.replace("summary.html");
 });
 

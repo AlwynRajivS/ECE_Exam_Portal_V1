@@ -547,8 +547,6 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
 
 <script>
 let timerStarted = false;
-let examLocked = false;   // 🔒 once violation limit reached
-
 
  let examLoaded = false;
 let isSubmitting = false;
@@ -578,43 +576,27 @@ document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
 /* VIOLATIONS */
-function violate(type){
-  if (examLocked) return;   // 🔒 already submitted
-
-  violations++;
-  vio.innerText = `${violations} / ${limit}`;
-
-  violationLog.push({
-    type,
-    time: new Date().toLocaleString()
-  });
-
-  // 🔐 FORCE SAVE ANSWERS FIRST
-  saveState();
-
-  proctorMsg.innerText =
-    `Violation: ${type} | Remaining: ${limit - violations}`;
-  overlay.classList.add("active");
-  setTimeout(()=>overlay.classList.remove("active"),2000);
-
-  // ✅ log violation safely
-  navigator.sendBeacon(
-    WEBAPP_URL,
-    new URLSearchParams({
-      action: "violation",
-      exam_id,
-      roll_no: user.roll,
-      type
-    })
-  );
-
-  // 🚨 FINAL VIOLATION → AUTO SUBMIT
-  if (violations >= limit) {
-    examLocked = true;
-    setTimeout(autoSubmitFromViolation, 300);
-  }
+function violate(type,auto=false){
+ violations++;
+ vio.innerText=`${violations} / ${limit}`;
+ violationLog.push({type,time:new Date().toLocaleString()});
+ proctorMsg.innerText =
+  `Violation: ${type} | Remaining: ${limit - violations}`;
+ overlay.classList.add("active");
+ setTimeout(()=>overlay.classList.remove("active"),2000);
+ fetch(WEBAPP_URL,{method:"POST",
+  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
+ });
+ if (violations >= limit && questions.length > 0) {
+ submitExam();
 }
 
+
+if (violations >= limit && questions.length > 0) {
+ submitExam();
+}
+
+}
 
 /* ================= STRICT PROCTOR EVENTS ================= */
 
@@ -647,12 +629,12 @@ window.addEventListener("blur",()=>{
 
 /* ❌ Reload / refresh */
 window.addEventListener("beforeunload", (e)=>{
-  if(isSubmitting || examLocked) return;
+  if(isSubmitting) return; // ✅ allow submit redirect
 
   if(questions.length > 0){
-    saveState();
+    violate("Page Reload / Refresh");
     e.preventDefault();
-    e.returnValue = "";
+    e.returnValue = ""; // block accidental close
   }
 });
 
@@ -768,9 +750,7 @@ function loadQ(){
     ${q[9] ? `<img class="qimg" src="${q[9]}">` : ""}
 
     ${["A","B","C","D"].map((o,i)=>`
-      <div class="option 
-${answers[String(q[2]).trim()] === o ? 'selected' : ''}
-
+      <div class="option ${answers[index]?.ans === o ? 'selected' : ''}"
         onclick="selectAns('${o}')">
         ${q[4+i]}
       </div>
@@ -785,16 +765,14 @@ ${answers[String(q[2]).trim()] === o ? 'selected' : ''}
 
 
 function selectAns(a){
-  const qid = String(questions[index][2]).trim();
-answers[qid] = a;
-
+  answers[index] = {
+    qid: questions[index][2],
+    ans: a
+  };
 
   const p = document.getElementById("p"+index);
   if(p){
-    if (answers[String(questions[index][2]).trim()]) {
-  p.classList.add("answered");
-}
-
+    p.classList.add("answered");
     p.classList.remove("review");
   }
 
@@ -863,9 +841,8 @@ if (isSubmitting) return;   // 🔒 HARD STOP
 
  const finalAnswers={};
 questions.forEach((q, i) => {
-  const qid = String(q[2]).trim();
-finalAnswers[qid] = answers[qid] || "";
-
+  finalAnswers[String(q[2]).trim()] =
+    answers[i]?.ans || "";
 });
 
 
@@ -881,44 +858,6 @@ finalAnswers[qid] = answers[qid] || "";
   })
  }).then(()=>location.href="summary.html");
 }
-
-function autoSubmitFromViolation(){
-  if (isSubmitting) return;
-  isSubmitting = true;
-
-  clearInterval(timerRef);
-
-  // 🔁 RESTORE SAVED ANSWERS (CRITICAL)
-  if(sessionStorage.getItem("answers")){
-    answers = JSON.parse(sessionStorage.getItem("answers"));
-  }
-
-  const finalAnswers = {};
-  questions.forEach((q, i) => {
-    const qid = String(q[2]).trim();
-finalAnswers[qid] = answers[qid] || "";
-
-  });
-
-  const payload = new URLSearchParams({
-    action: "submitExam",
-    exam_id,
-    roll_no: user.roll,
-    answers_json: JSON.stringify(finalAnswers),
-    violation_log: JSON.stringify(violationLog),
-    total_violations: violations,
-    status: "AUTO_SUBMITTED"
-  });
-
-  // ✅ ONLY METHOD THAT WORKS DURING VIOLATION
-  navigator.sendBeacon(WEBAPP_URL, payload);
-
-  // 🚫 remove exam page from history
-  setTimeout(()=>{
-    location.replace("summary.html");
-  },800);
-}
-
 
 function saveState(){
  sessionStorage.setItem("answers", JSON.stringify(answers));
@@ -952,6 +891,10 @@ function restoreState(){
 }
 
 /* CALCULATOR */
+function toggleCalc(){
+ calculator.style.display=calculator.style.display=="block"?"none":"block";
+}
+
 const calculator = document.getElementById("calculator");
 const calcScreen = document.getElementById("calcScreen");
 
@@ -971,19 +914,78 @@ function toggleShift(){
   SHIFT=!SHIFT;
 }
 
-function toggleAngle(){ ANGLE = ANGLE==="DEG" ? "RAD" : ANGLE==="RAD" ? "GRAD" : "DEG"; document.getElementById("mode").innerText = ANGLE; } 
+function toggleAngle(){
+  ANGLE = ANGLE==="DEG" ? "RAD" : ANGLE==="RAD" ? "GRAD" : "DEG";
+  document.getElementById("mode").innerText = ANGLE;
+}
 
-function calc(v){ calcScreen.value += v; }
+function calc(v){
+  calcScreen.value += v;
+}
 
-function fn(f){ if(SHIFT){ if(f==="sin") calcScreen.value+="asin("; if(f==="cos") calcScreen.value+="acos("; if(f==="tan") calcScreen.value+="atan("; SHIFT=false; }else{ calcScreen.value+=f+"("; } } function sqrt(){ calcScreen.value+="sqrt("; }
-function del(){ calcScreen.value=calcScreen.value.slice(0,-1); } function clearCalc(){ calcScreen.value=""; } function ans(){ calcScreen.value+=ANSWER; }
+function fn(f){
+  if(SHIFT){
+    if(f==="sin") calcScreen.value+="asin(";
+    if(f==="cos") calcScreen.value+="acos(";
+    if(f==="tan") calcScreen.value+="atan(";
+    SHIFT=false;
+  }else{
+    calcScreen.value+=f+"(";
+  }
+}
 
-function memAdd(){ MEMORY+=Number(calcScreen.value||0); } function memSub(){ MEMORY-=Number(calcScreen.value||0); } function memRecall(){ calcScreen.value+=MEMORY; } function memClear(){ MEMORY=0; }
+function sqrt(){
+  calcScreen.value+="sqrt(";
+}
 
-function calculate(){ try{ let scope={ sin:x=>math.sin(conv(x)), cos:x=>math.cos(conv(x)), tan:x=>math.tan(conv(x)), asin:x=>math.asin(x), acos:x=>math.acos(x), atan:x=>math.atan(x), log:x=>math.log10(x), ln:x=>math.log(x), pi:math.pi, e:math.e, sqrt:x=>math.sqrt(x) }; let
-res=math.evaluate(calcScreen.value,scope); ANSWER=res; calcScreen.value=res; }catch{ calcScreen.value="Error"; } } function conv(x){ if(ANGLE==="DEG") return math.unit(x,"deg"); if(ANGLE==="GRAD") return math.unit(x*0.9,"deg"); return x; }
+function del(){
+  calcScreen.value=calcScreen.value.slice(0,-1);
+}
 
-</script> 
-</body> 
-</html>
+function clearCalc(){
+  calcScreen.value="";
+}
 
+function ans(){
+  calcScreen.value+=ANSWER;
+}
+
+function memAdd(){ MEMORY+=Number(calcScreen.value||0); }
+function memSub(){ MEMORY-=Number(calcScreen.value||0); }
+function memRecall(){ calcScreen.value+=MEMORY; }
+function memClear(){ MEMORY=0; }
+
+function calculate(){
+  try{
+    let scope={
+      sin:x=>math.sin(conv(x)),
+      cos:x=>math.cos(conv(x)),
+      tan:x=>math.tan(conv(x)),
+      asin:x=>math.asin(x),
+      acos:x=>math.acos(x),
+      atan:x=>math.atan(x),
+      log:x=>math.log10(x),
+      ln:x=>math.log(x),
+      pi:math.pi,
+      e:math.e,
+      sqrt:x=>math.sqrt(x)
+    };
+    let res=math.evaluate(calcScreen.value,scope);
+    ANSWER=res;
+    calcScreen.value=res;
+  }catch{
+    calcScreen.value="Error";
+  }
+}
+
+function conv(x){
+  if(ANGLE==="DEG") return math.unit(x,"deg");
+  if(ANGLE==="GRAD") return math.unit(x*0.9,"deg");
+  return x;
+}
+
+
+
+</script>
+</body>
+</html> 

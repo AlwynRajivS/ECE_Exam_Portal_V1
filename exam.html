@@ -576,32 +576,19 @@ document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
 /* VIOLATIONS */
-function violate(type){
-  if (examLocked || isSubmitting) return;  // 🔒 STOP EVERYTHING
-
-  violations++;
-  vio.innerText = `${violations} / ${limit}`;
-  violationLog.push({ type, time: new Date().toLocaleString() });
-
-  proctorMsg.innerText =
-    `Violation: ${type} | Remaining: ${limit - violations}`;
-  overlay.classList.add("active");
-  setTimeout(()=>overlay.classList.remove("active"),2000);
-
-  fetch(WEBAPP_URL,{
-    method:"POST",
-    body:new URLSearchParams({
-      action:"violation",
-      exam_id,
-      roll_no:user.roll,
-      type
-    })
-  });
-
-  if (violations >= limit) {
-    examLocked = true;              // 🔒 CRITICAL
-    autoSubmitFromViolation();
-  }
+function violate(type,auto=false){
+ violations++;
+ vio.innerText=`${violations} / ${limit}`;
+ violationLog.push({type,time:new Date().toLocaleString()});
+ proctorMsg.innerText =
+  `Violation: ${type} | Remaining: ${limit - violations}`;
+ overlay.classList.add("active");
+ setTimeout(()=>overlay.classList.remove("active"),2000);
+ fetch(WEBAPP_URL,{method:"POST",
+  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
+ });
+ if (violations >= limit) {
+  autoSubmitFromViolation();
 }
 
 
@@ -877,12 +864,12 @@ function submitExam(){
   });
 }
 
-async function autoSubmitFromViolation(){
+function autoSubmitFromViolation(){
   if (isSubmitting) return;
   isSubmitting = true;
 
   clearInterval(timerRef);
-  saveState();
+  saveState();   // 💾 ensure answers exist in session
 
   const finalAnswers = {};
   questions.forEach((q, i) => {
@@ -899,20 +886,17 @@ async function autoSubmitFromViolation(){
   formData.append("total_violations", violations);
   formData.append("status", "AUTO_SUBMITTED");
 
-  try{
-    // ✅ WAIT until GAS confirms receipt
-    await fetch(WEBAPP_URL, {
-      method: "POST",
-      body: formData
-    });
-  }catch(e){
-    console.error("Auto submit failed", e);
-  }
+  // 🚨 DO NOT REDIRECT UNTIL REQUEST IS SENT
+  fetch(WEBAPP_URL, {
+    method: "POST",
+    body: formData
+  });
 
-  // ⏱ NOW it is safe to navigate
-  location.href = "summary.html";
+  // ⏱ delayed redirect gives GAS time to commit
+  setTimeout(() => {
+    location.href = "summary.html";
+  }, 1200);
 }
-
 
 function saveState(){
   try{

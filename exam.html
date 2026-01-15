@@ -573,7 +573,7 @@ function forceFullscreen(){
 document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
-/* VIOLATIONS 
+/* VIOLATIONS */
 function violate(type,auto=false){
  violations++;
  vio.innerText=`${violations} / ${limit}`;
@@ -588,9 +588,9 @@ function violate(type,auto=false){
  if (violations >= limit && questions.length > 0) {
  submitExam();
 }
-}*/
+}
 
-/* VIOLATIONS */
+/* VIOLATIONS 
 function violate(type, auto=false){
 
   // 🚫 ignore if already submitting
@@ -636,7 +636,7 @@ function violate(type, auto=false){
       submitExam("VIOLATION_LIMIT");
     }, 500);
   }
-}
+}*/
 
 
 function freezeExamUI(){
@@ -880,7 +880,7 @@ function startTimer(){
     const s = duration % 60;
     timer.innerText = `${m}:${String(s).padStart(2,"0")}`;
     duration--;
-    saveState();
+    submitExwm();
   },1000);
 }
 
@@ -890,7 +890,7 @@ function startTimer(){
 function confirmSubmit(){modal.style.display="flex"}
 function closeModal(){modal.style.display="none"}
 
-function submitExam(reason="USER_SUBMITTED"){
+/*function submitExam(reason="USER_SUBMITTED"){
   if (isSubmitting) return;
   isSubmitting = true;
 
@@ -918,9 +918,9 @@ function submitExam(reason="USER_SUBMITTED"){
     location.replace("summary.html");
   });
 }
+$/
 
-
-/*function submitExam(){
+function submitExam(){
   if (isSubmitting) return;   // 🔒 HARD STOP
   isSubmitting = true;
 
@@ -945,7 +945,7 @@ function submitExam(reason="USER_SUBMITTED"){
   }).then(()=>{location.replace("summary.html"); // 🔁 SAFE REDIRECT
   });
 }
-*/
+
 
 /*function submitExam(){
   isSubmitting = true;   // ✅ critical

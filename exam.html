@@ -882,7 +882,7 @@ function startTimer(){
 function confirmSubmit(){modal.style.display="flex"}
 function closeModal(){modal.style.display="none"}
 
-/*function submitExam(reason="USER_SUBMITTED"){
+function submitExam(reason="USER_SUBMITTED"){
   if (isSubmitting) return;
   isSubmitting = true;
 
@@ -910,9 +910,9 @@ function closeModal(){modal.style.display="none"}
     location.replace("summary.html");
   });
 }
-$/
 
-function submitExam(){
+
+/*function submitExam(){
   if (isSubmitting) return;   // 🔒 HARD STOP
   isSubmitting = true;
 
@@ -936,7 +936,7 @@ function submitExam(){
     })
   }).then(()=>{location.replace("summary.html"); // 🔁 SAFE REDIRECT
   });
-}
+}*/
 
 /*function submitExam(){
   isSubmitting = true;   // ✅ critical

@@ -880,7 +880,7 @@ function startTimer(){
     const s = duration % 60;
     timer.innerText = `${m}:${String(s).padStart(2,"0")}`;
     duration--;
-    submitExam();
+    saveState();
   },1000);
 }
 

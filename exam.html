@@ -587,14 +587,10 @@ function violate(type,auto=false){
  fetch(WEBAPP_URL,{method:"POST",
   body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
  });
- if (violations >= limit && questions.length > 0) {
- submitExam();
+ if (violations >= limit) {
+  autoSubmitFromViolation();
 }
 
-
-if (violations >= limit && questions.length > 0) {
- submitExam();
-}
 
 }
 
@@ -846,25 +842,64 @@ function submitExam(){
       answers[i]?.ans || "";
   });
 
-  // ✅ GUARANTEED DELIVERY
-  navigator.sendBeacon(
-    WEBAPP_URL,
-    new URLSearchParams({
-      action: "submitExam",
-      exam_id,
-      roll_no: user.roll,
-      answers_json: JSON.stringify(finalAnswers),
-      violation_log: JSON.stringify(violationLog),
-      total_violations: violations,
-      status: "SUBMITTED"
-    })
-  );
+  const formData = new URLSearchParams();
+  formData.append("action", "submitExam");
+  formData.append("exam_id", exam_id);
+  formData.append("roll_no", user.roll);
+  formData.append("answers_json", JSON.stringify(finalAnswers));
+  formData.append("violation_log", JSON.stringify(violationLog));
+  formData.append("total_violations", violations);
+  formData.append("status", "SUBMITTED");
 
-  // ⏱ allow beacon to flush before redirect
-  setTimeout(() => {
-    location.replace("summary.html");
-  }, 800);
+  fetch(WEBAPP_URL, {
+    method: "POST",
+    body: formData
+  })
+  .then(() => {
+    // ✅ redirect ONLY after backend receives data
+    location.href = "summary.html";
+  })
+  .catch(err => {
+    console.error("Submit failed", err);
+    alert("Submission failed. Please contact exam admin.");
+    isSubmitting = false; // allow retry
+  });
 }
+
+function autoSubmitFromViolation(){
+  if (isSubmitting) return;
+  isSubmitting = true;
+
+  clearInterval(timerRef);
+  saveState();
+
+  const finalAnswers = {};
+  questions.forEach((q, i) => {
+    finalAnswers[String(q[2]).trim()] =
+      answers[i]?.ans || "";
+  });
+
+  const formData = new URLSearchParams();
+  formData.append("action", "submitExam");
+  formData.append("exam_id", exam_id);
+  formData.append("roll_no", user.roll);
+  formData.append("answers_json", JSON.stringify(finalAnswers));
+  formData.append("violation_log", JSON.stringify(violationLog));
+  formData.append("total_violations", violations);
+  formData.append("status", "AUTO_SUBMITTED");
+
+  fetch(WEBAPP_URL, {
+    method: "POST",
+    body: formData
+  })
+  .finally(() => {
+    // ⏱ small delay for safety
+    setTimeout(() => {
+      location.href = "summary.html";
+    }, 300);
+  });
+}
+
 
 function saveState(){
   try{

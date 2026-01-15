@@ -592,9 +592,7 @@ function violate(type,auto=false){
 }
 
 
-if (violations >= limit && questions.length > 0) {
- submitExam();
-}
+
 
 }
 
@@ -891,6 +889,9 @@ function restoreState(){
 }
 
 /* CALCULATOR */
+function toggleCalc(){
+ calculator.style.display=calculator.style.display=="block"?"none":"block";
+}
 
 const calculator = document.getElementById("calculator");
 const calcScreen = document.getElementById("calcScreen");
@@ -905,14 +906,25 @@ function toggleCalc(){
 let SHIFT=false;
 let ANGLE="DEG";
 let MEMORY=0;
-let ANSWER=0; function toggleShift(){ SHIFT=!SHIFT; } function toggleAngle(){ ANGLE = ANGLE==="DEG" ? "RAD" : ANGLE==="RAD" ? "GRAD" : "DEG";
+let ANSWER=0;
 
-document.getElementById("mode").innerText = ANGLE; } function calc(v){ calcScreen.value += v; } function fn(f){ if(SHIFT){ if(f==="sin") calcScreen.value+="asin("; if(f==="cos") calcScreen.value+="acos("; if(f==="tan") calcScreen.value+="atan("; SHIFT=false;}else{ calcScreen.value+=f+"("; } } function sqrt(){ calcScreen.value+="sqrt("; } function del(){ calcScreen.value=calcScreen.value.slice(0,-1); } function clearCalc(){ calcScreen.value=""; }
+function toggleShift(){
+  SHIFT=!SHIFT;
+}
 
-function ans(){ calcScreen.value+=ANSWER; } function memAdd(){ MEMORY+=Number(calcScreen.value||0); } function memSub(){ MEMORY-=Number(calcScreen.value||0); } function memRecall(){ calcScreen.value+=MEMORY; } function memClear(){ MEMORY=0; }
+function toggleAngle(){ ANGLE = ANGLE==="DEG" ? "RAD" : ANGLE==="RAD" ? "GRAD" : "DEG"; document.getElementById("mode").innerText = ANGLE; } 
+
+function calc(v){ calcScreen.value += v; }
+
+function fn(f){ if(SHIFT){ if(f==="sin") calcScreen.value+="asin("; if(f==="cos") calcScreen.value+="acos("; if(f==="tan") calcScreen.value+="atan("; SHIFT=false; }else{ calcScreen.value+=f+"("; } } function sqrt(){ calcScreen.value+="sqrt("; }
+function del(){ calcScreen.value=calcScreen.value.slice(0,-1); } function clearCalc(){ calcScreen.value=""; } function ans(){ calcScreen.value+=ANSWER; }
+
+function memAdd(){ MEMORY+=Number(calcScreen.value||0); } function memSub(){ MEMORY-=Number(calcScreen.value||0); } function memRecall(){ calcScreen.value+=MEMORY; } function memClear(){ MEMORY=0; }
+
 function calculate(){ try{ let scope={ sin:x=>math.sin(conv(x)), cos:x=>math.cos(conv(x)), tan:x=>math.tan(conv(x)), asin:x=>math.asin(x), acos:x=>math.acos(x), atan:x=>math.atan(x), log:x=>math.log10(x), ln:x=>math.log(x), pi:math.pi, e:math.e, sqrt:x=>math.sqrt(x) }; let
 res=math.evaluate(calcScreen.value,scope); ANSWER=res; calcScreen.value=res; }catch{ calcScreen.value="Error"; } } function conv(x){ if(ANGLE==="DEG") return math.unit(x,"deg"); if(ANGLE==="GRAD") return math.unit(x*0.9,"deg"); return x; }
 
 </script> 
 </body> 
 </html>
+

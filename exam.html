@@ -588,8 +588,13 @@ function violate(type,auto=false){
   body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
  });
  if (violations >= limit) {
-  autoSubmitFromViolation();
+submitExam();
+  /*autoSubmitFromViolation();*/
 }
+
+
+}
+
 
 
 /* ================= STRICT PROCTOR EVENTS ================= */

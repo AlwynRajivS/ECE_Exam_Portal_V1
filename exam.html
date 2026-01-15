@@ -856,10 +856,17 @@ function submitExam(){
       violation_log:JSON.stringify(violationLog),
       total_violations:violations
     })
-  }).then(()=>{
+  })
+.then(()=>{
+  sessionStorage.setItem("exam_completed", "YES");   // ✅ FLAG
+  location.replace("summary.html");
+});
+
+
+/*.then(()=>{
     sessionStorage.clear();  // 🧹 CLEAN STATE
     location.replace("summary.html"); // 🔁 SAFE REDIRECT
-  });
+  });*/
 }
 
 function saveState(){

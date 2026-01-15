@@ -639,15 +639,7 @@ function violate(type, auto=false){
 }*/
 
 
-function freezeExamUI(){
-  document.querySelectorAll(".option").forEach(o=>{
-    o.onclick = null;
-    o.style.pointerEvents = "none";
-  });
-  document.querySelectorAll("button").forEach(b=>{
-    b.disabled = true;
-  });
-}
+
 
 
 /* ================= STRICT PROCTOR EVENTS ================= */

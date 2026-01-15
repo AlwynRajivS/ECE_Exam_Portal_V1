@@ -588,9 +588,9 @@ function violate(type,auto=false){
   body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
  });
  if (violations >= limit) {
-submitExam();
-  /*autoSubmitFromViolation();*/
+  autoSubmitFromViolation();
 }
+
 
 
 }
@@ -872,7 +872,7 @@ function autoSubmitFromViolation(){
   isSubmitting = true;
 
   clearInterval(timerRef);
-  saveState();
+  saveState();   // 💾 ensure answers exist in session
 
   const finalAnswers = {};
   questions.forEach((q, i) => {
@@ -889,16 +889,16 @@ function autoSubmitFromViolation(){
   formData.append("total_violations", violations);
   formData.append("status", "AUTO_SUBMITTED");
 
+  // 🚨 DO NOT REDIRECT UNTIL REQUEST IS SENT
   fetch(WEBAPP_URL, {
     method: "POST",
     body: formData
-  })
-  .finally(() => {
-    // ⏱ small delay for safety
-    setTimeout(() => {
-      location.href = "summary.html";
-    }, 300);
   });
+
+  // ⏱ delayed redirect gives GAS time to commit
+  setTimeout(() => {
+    location.href = "summary.html";
+  }, 1200);
 }
 
 

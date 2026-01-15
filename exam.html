@@ -912,7 +912,6 @@ function submitExam(reason="USER_SUBMITTED"){
     sessionStorage.clear();  // 🧹 CLEAN STATE
     location.replace("summary.html"); // 🔁 SAFE REDIRECT
   });*/
-}
 
 function saveState(){
  sessionStorage.setItem("answers", JSON.stringify(answers));

@@ -768,7 +768,9 @@ function loadQ(){
     ${q[9] ? `<img class="qimg" src="${q[9]}">` : ""}
 
     ${["A","B","C","D"].map((o,i)=>`
-      <div class="option ${answers[index]?.ans === o ? 'selected' : ''}"
+      <div class="option 
+${answers[String(q[2]).trim()] === o ? 'selected' : ''}
+
         onclick="selectAns('${o}')">
         ${q[4+i]}
       </div>
@@ -783,14 +785,16 @@ function loadQ(){
 
 
 function selectAns(a){
-  answers[index] = {
-    qid: questions[index][2],
-    ans: a
-  };
+  const qid = String(questions[index][2]).trim();
+answers[qid] = a;
+
 
   const p = document.getElementById("p"+index);
   if(p){
-    p.classList.add("answered");
+    if (answers[String(questions[index][2]).trim()]) {
+  p.classList.add("answered");
+}
+
     p.classList.remove("review");
   }
 
@@ -859,8 +863,9 @@ if (isSubmitting) return;   // 🔒 HARD STOP
 
  const finalAnswers={};
 questions.forEach((q, i) => {
-  finalAnswers[String(q[2]).trim()] =
-    answers[i]?.ans || "";
+  const qid = String(q[2]).trim();
+finalAnswers[qid] = answers[qid] || "";
+
 });
 
 
@@ -890,8 +895,9 @@ function autoSubmitFromViolation(){
 
   const finalAnswers = {};
   questions.forEach((q, i) => {
-    finalAnswers[String(q[2]).trim()] =
-      answers[i]?.ans || "";
+    const qid = String(q[2]).trim();
+finalAnswers[qid] = answers[qid] || "";
+
   });
 
   const payload = new URLSearchParams({

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Exam Summary</title>
+<title>Exam Result</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet"
@@ -34,6 +34,14 @@ header{
  max-width:720px;
  margin:30px auto;
  padding:20px;
+}
+
+/* ================= FOOTER ================= */
+.footer {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 12px;
+  color: #777;
 }
 
 .card{
@@ -112,12 +120,6 @@ canvas{margin-top:20px}
 .review{background:linear-gradient(135deg,#1976d2,#42a5f5)}
 .dashboard{background:linear-gradient(135deg,#546e7a,#90a4ae)}
 
-.footer{
- margin-top:18px;
- font-size:12px;
- color:#777;
-}
-
 @media(max-width:520px){
  .stats{grid-template-columns:1fr}
 }
@@ -126,7 +128,7 @@ canvas{margin-top:20px}
 
 <body>
 
-<header>📊 Exam Summary</header>
+<header>📊 Exam Result & Performance</header>
 
 <div class="container">
 <div class="card">
@@ -154,7 +156,7 @@ canvas{margin-top:20px}
   </div>
 
   <h3 style="color:#0d47a1">
-    Marks Scored: <span id="marks">0</span>
+    Marks Scored: <span id="marks"></span>
   </h3>
 
   <span id="statusBadge" class="badge"></span>
@@ -162,9 +164,7 @@ canvas{margin-top:20px}
   <canvas id="chart" height="180"></canvas>
 
   <div class="footer-btns">
-    <button class="review" onclick="location.href='review.html'">
-      <i class="fa-solid fa-file-lines"></i> Review
-    </button>
+    
     <button class="dashboard" onclick="location.href='student_dashboard.html'">
       <i class="fa-solid fa-house"></i> Dashboard
     </button>
@@ -178,108 +178,74 @@ canvas{margin-top:20px}
 </div>
 
 <script>
-/* ================= CONFIG ================= */
 const WEBAPP_URL =
 "https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
 
-/* ================= GET EXAM ID ================= */
-const params = new URLSearchParams(window.location.search);
-const exam_id = params.get("exam_id") || sessionStorage.getItem("exam_id");
+const user = JSON.parse(sessionStorage.getItem("user"));
+const exam_id = sessionStorage.getItem("exam_id");
 
-/* ================= GET USER ================= */
-const user =
-  JSON.parse(sessionStorage.getItem("user")) ||
-  JSON.parse(localStorage.getItem("user"));
+studentInfo.innerHTML = `👨‍🎓 ${user.name} (${user.roll})`;
+examInfo.innerHTML = `📝 Exam ID: ${exam_id}`;
 
-/* ================= VALIDATION ================= */
-if (!exam_id) {
-  alert("Invalid access. Exam ID missing.");
-  location.href = "login.html";
-}
-
-if (!user) {
-  alert("Session expired. Please login again.");
-  location.href = "login.html";
-}
-
-/* ================= UI ================= */
-document.getElementById("studentInfo").innerHTML =
-  `👨‍🎓 ${user.name} (${user.roll})`;
-document.getElementById("examInfo").innerHTML =
-  `📝 Exam ID: ${exam_id}`;
-
-/* ================= FETCH DATA ================= */
 Promise.all([
-  fetch(WEBAPP_URL, {
-    method: "POST",
-    body: new URLSearchParams({
-      action: "getResults",
-      exam_id
-    })
-  }).then(r => r.json()),
+ fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({action:"getResults", exam_id})
+ }).then(r=>r.json()),
 
-  fetch(WEBAPP_URL, {
-    method: "POST",
-    body: new URLSearchParams({
-      action: "getResponses",
-      exam_id,
-      roll_no: user.roll
-    })
-  }).then(r => r.json())
+ fetch(WEBAPP_URL,{
+  method:"POST",
+  body:new URLSearchParams({
+    action:"getResponses",
+    exam_id,
+    roll_no:user.roll
+  })
+ }).then(r=>r.json())
 ])
-.then(([results, responses]) => {
+.then(([results, responses])=>{
 
-  const r = results.find(x => x[1] === user.roll);
-  if (!r) {
-    alert("Result not available yet");
-    return;
+ const r = results.find(x=>x[1]===user.roll);
+ if(!r){ alert("Result not found"); return; }
+
+ const marks = r[2];
+ const vio = r[3];
+ const status = r[4];
+
+ const responseRow = responses[0];
+ const answers = responseRow ? JSON.parse(responseRow[2]) : {};
+
+ const totalQ = Object.keys(answers).length;
+ let answered = 0, unanswered = 0;
+
+ Object.values(answers).forEach(a=>{
+   if(a === "") unanswered++;
+   else answered++;
+ });
+
+ document.getElementById("totalQ").innerText = totalQ;
+ document.getElementById("answered").innerText = answered;
+ document.getElementById("unanswered").innerText = unanswered;
+ document.getElementById("violations").innerText = vio;
+ document.getElementById("marks").innerText = marks;
+
+ statusBadge.innerText = status;
+ statusBadge.className = "badge " + (status==="SUBMITTED"?"pass":"fail");
+
+ new Chart(document.getElementById("chart"),{
+  type:"bar",
+  data:{
+   labels:["Answered","Unanswered","Violations"],
+   datasets:[{
+    data:[answered, unanswered, vio],
+    backgroundColor:["#2e7d32","#ef6c00","#c62828"]
+   }]
+  },
+  options:{
+   responsive:true,
+   plugins:{legend:{display:false}},
+   scales:{y:{beginAtZero:true}}
   }
-
-  const marks = r[2];
-  const vio = Number(r[3]) || 0;
-  const status = r[4];
-
-  let answers = {};
-  if (responses?.length && responses[0][2]) {
-    answers = JSON.parse(responses[0][2]);
-  }
-
-  const totalQ = Object.keys(answers).length;
-  let answered = 0, unanswered = 0;
-
-  Object.values(answers).forEach(a => {
-    a === "" || a === null ? unanswered++ : answered++;
-  });
-
-  document.getElementById("totalQ").innerText = totalQ;
-  document.getElementById("answered").innerText = answered;
-  document.getElementById("unanswered").innerText = unanswered;
-  document.getElementById("violations").innerText = vio;
-  document.getElementById("marks").innerText = marks;
-
-  const badge = document.getElementById("statusBadge");
-  badge.innerText = status;
-  badge.className = "badge " + (status === "PASS" ? "pass" : "fail");
-
-  new Chart(document.getElementById("chart"), {
-    type: "bar",
-    data: {
-      labels: ["Answered", "Unanswered", "Violations"],
-      datasets: [{
-        data: [answered, unanswered, vio],
-        backgroundColor: ["#2e7d32","#ef6c00","#c62828"]
-      }]
-    },
-    options: {
-      responsive:true,
-      plugins:{legend:{display:false}},
-      scales:{y:{beginAtZero:true}}
-    }
-  });
-})
-.catch(err=>{
-  console.error(err);
-  alert("Unable to load summary");
+ });
 });
 </script>
 

@@ -938,8 +938,7 @@ function submitExam(){
   });
 }
 
-
-/*function submitExam(){
+function submitExam(){
   isSubmitting = true;   // ✅ critical
 
  const finalAnswers={};
@@ -960,7 +959,7 @@ questions.forEach((q, i) => {
    //status:"SUBMITTED"
   })
  }).then(()=>location.href="summary.html");
-}*/
+}
 
 function saveState(){
  sessionStorage.setItem("answers", JSON.stringify(answers));

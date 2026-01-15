@@ -548,6 +548,8 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
 
 <script>
 let timerStarted = false;
+let forceSubmitting = false;
+
 
  let examLoaded = false;
 let isSubmitting = false;
@@ -589,7 +591,22 @@ function violate(type,auto=false){
   body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
  });
  if (violations >= limit && questions.length > 0) {
- submitExam();
+  if (forceSubmitting) return;
+
+  forceSubmitting = true;
+
+  // 🔒 freeze UI + events
+  document.removeEventListener("visibilitychange", ()=>{});
+  window.onblur = null;
+
+  // ⛔ stop timer
+  clearInterval(timerRef);
+
+  // ⏳ small delay to allow state sync
+  setTimeout(()=>{
+    submitExam("VIOLATION_LIMIT");
+  }, 300);
+
 }
 
 }

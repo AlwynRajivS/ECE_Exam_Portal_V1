@@ -621,16 +621,21 @@ function nextQ(){
 let timerRef=null;
 
 function startTimer(){
-  if(timerStarted) return;   // ⛔ prevents duplicate timers
+  if(timerStarted) return;
   timerStarted = true;
 
   timerRef = setInterval(()=>{
+    if(duration <= 0){
+      clearInterval(timerRef);
+      submitExam();
+      return;
+    }
+
     const m = Math.floor(duration / 60);
     const s = duration % 60;
     timer.innerText = `${m}:${String(s).padStart(2,"0")}`;
     duration--;
     saveState();
-    if(duration < 0) submitExam();
   },1000);
 }
 

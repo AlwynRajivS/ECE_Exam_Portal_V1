@@ -547,6 +547,8 @@ header .grp{display:flex;gap:14px;align-items:flex-start}
 
 <script>
 let timerStarted = false;
+let examLocked = false;   // 🔒 once violation limit reached
+
 
  let examLoaded = false;
 let isSubmitting = false;
@@ -576,25 +578,43 @@ document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
 /* VIOLATIONS */
-function violate(type,auto=false){
- violations++;
- vio.innerText=`${violations} / ${limit}`;
- violationLog.push({type,time:new Date().toLocaleString()});
- proctorMsg.innerText =
-  `Violation: ${type} | Remaining: ${limit - violations}`;
- overlay.classList.add("active");
- setTimeout(()=>overlay.classList.remove("active"),2000);
- fetch(WEBAPP_URL,{method:"POST",
-  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
- });
- if (violations >= limit && questions.length > 0) {
- submitExam();
+function violate(type){
+  if (examLocked) return;   // 🔒 already submitted
+
+  violations++;
+  vio.innerText = `${violations} / ${limit}`;
+
+  violationLog.push({
+    type,
+    time: new Date().toLocaleString()
+  });
+
+  // 🔐 FORCE SAVE ANSWERS FIRST
+  saveState();
+
+  proctorMsg.innerText =
+    `Violation: ${type} | Remaining: ${limit - violations}`;
+  overlay.classList.add("active");
+  setTimeout(()=>overlay.classList.remove("active"),2000);
+
+  // ✅ log violation safely
+  navigator.sendBeacon(
+    WEBAPP_URL,
+    new URLSearchParams({
+      action: "violation",
+      exam_id,
+      roll_no: user.roll,
+      type
+    })
+  );
+
+  // 🚨 FINAL VIOLATION → AUTO SUBMIT
+  if (violations >= limit) {
+    examLocked = true;
+    setTimeout(autoSubmitFromViolation, 300);
+  }
 }
 
-
-
-
-}
 
 /* ================= STRICT PROCTOR EVENTS ================= */
 
@@ -627,12 +647,12 @@ window.addEventListener("blur",()=>{
 
 /* ❌ Reload / refresh */
 window.addEventListener("beforeunload", (e)=>{
-  if(isSubmitting) return; // ✅ allow submit redirect
+  if(isSubmitting || examLocked) return;
 
   if(questions.length > 0){
-    violate("Page Reload / Refresh");
+    saveState();
     e.preventDefault();
-    e.returnValue = ""; // block accidental close
+    e.returnValue = "";
   }
 });
 
@@ -856,6 +876,43 @@ questions.forEach((q, i) => {
   })
  }).then(()=>location.href="summary.html");
 }
+
+function autoSubmitFromViolation(){
+  if (isSubmitting) return;
+  isSubmitting = true;
+
+  clearInterval(timerRef);
+
+  // 🔁 RESTORE SAVED ANSWERS (CRITICAL)
+  if(sessionStorage.getItem("answers")){
+    answers = JSON.parse(sessionStorage.getItem("answers"));
+  }
+
+  const finalAnswers = {};
+  questions.forEach((q, i) => {
+    finalAnswers[String(q[2]).trim()] =
+      answers[i]?.ans || "";
+  });
+
+  const payload = new URLSearchParams({
+    action: "submitExam",
+    exam_id,
+    roll_no: user.roll,
+    answers_json: JSON.stringify(finalAnswers),
+    violation_log: JSON.stringify(violationLog),
+    total_violations: violations,
+    status: "AUTO_SUBMITTED"
+  });
+
+  // ✅ ONLY METHOD THAT WORKS DURING VIOLATION
+  navigator.sendBeacon(WEBAPP_URL, payload);
+
+  // 🚫 remove exam page from history
+  setTimeout(()=>{
+    location.replace("summary.html");
+  },800);
+}
+
 
 function saveState(){
  sessionStorage.setItem("answers", JSON.stringify(answers));

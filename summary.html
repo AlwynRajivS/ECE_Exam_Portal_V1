@@ -184,6 +184,14 @@ const WEBAPP_URL =
 const user = JSON.parse(sessionStorage.getItem("user"));
 const exam_id = sessionStorage.getItem("exam_id");
 
+ sessionStorage.getItem("exam_id");
+
+if(!user || !exam_id){
+  alert("Session expired. Please login again.");
+  location.replace("index.html");
+}
+
+
 studentInfo.innerHTML = `👨‍🎓 ${user.name} (${user.roll})`;
 examInfo.innerHTML = `📝 Exam ID: ${exam_id}`;
 
@@ -247,6 +255,15 @@ Promise.all([
   }
  });
 });
+window.addEventListener("load", ()=>{
+  if(sessionStorage.getItem("exam_completed")==="YES"){
+    // keep user + exam_id until page fully loads
+    setTimeout(()=>{
+      sessionStorage.clear();
+    }, 1000); // ✅ safe delay
+  }
+});
+
 </script>
 
 </body>

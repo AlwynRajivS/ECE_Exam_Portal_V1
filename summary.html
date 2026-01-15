@@ -183,71 +183,101 @@ canvas{margin-top:20px}
 const WEBAPP_URL =
 "https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
 
+/* ===== SAFE DOM ACCESS ===== */
+const studentInfo = document.getElementById("studentInfo");
+const examInfo = document.getElementById("examInfo");
+const statusBadge = document.getElementById("statusBadge");
+
+/* ===== SESSION CHECK ===== */
 const user = JSON.parse(sessionStorage.getItem("user"));
 const exam_id = sessionStorage.getItem("exam_id");
+
+if (!user || !exam_id) {
+  alert("Session expired. Please login again.");
+  location.href = "login.html";
+}
 
 studentInfo.innerHTML = `👨‍🎓 ${user.name} (${user.roll})`;
 examInfo.innerHTML = `📝 Exam ID: ${exam_id}`;
 
+/* ===== FETCH DATA ===== */
 Promise.all([
- fetch(WEBAPP_URL,{
-  method:"POST",
-  body:new URLSearchParams({action:"getResults", exam_id})
- }).then(r=>r.json()),
+  fetch(WEBAPP_URL, {
+    method: "POST",
+    body: new URLSearchParams({
+      action: "getResults",
+      exam_id
+    })
+  }).then(r => r.json()),
 
- fetch(WEBAPP_URL,{
-  method:"POST",
-  body:new URLSearchParams({
-    action:"getResponses",
-    exam_id,
-    roll_no:user.roll
-  })
- }).then(r=>r.json())
+  fetch(WEBAPP_URL, {
+    method: "POST",
+    body: new URLSearchParams({
+      action: "getResponses",
+      exam_id,
+      roll_no: user.roll
+    })
+  }).then(r => r.json())
 ])
-.then(([results, responses])=>{
+.then(([results, responses]) => {
 
- const r = results.find(x=>x[1]===user.roll);
- if(!r){ alert("Result not found"); return; }
+  console.log("RESULTS:", results);
+  console.log("RESPONSES:", responses);
 
- const marks = r[2];
- const vio = r[3];
- const status = r[4];
-
- const responseRow = responses[0];
- const answers = responseRow ? JSON.parse(responseRow[2]) : {};
-
- const totalQ = Object.keys(answers).length;
- let answered = 0, unanswered = 0;
-
- Object.values(answers).forEach(a=>{
-   if(a === "") unanswered++;
-   else answered++;
- });
-
- document.getElementById("totalQ").innerText = totalQ;
- document.getElementById("answered").innerText = answered;
- document.getElementById("unanswered").innerText = unanswered;
- document.getElementById("violations").innerText = vio;
- document.getElementById("marks").innerText = marks;
-
- statusBadge.innerText = status;
- statusBadge.className = "badge " + (status==="SUBMITTED"?"pass":"fail");
-
- new Chart(document.getElementById("chart"),{
-  type:"bar",
-  data:{
-   labels:["Answered","Unanswered","Violations"],
-   datasets:[{
-    data:[answered, unanswered, vio],
-    backgroundColor:["#2e7d32","#ef6c00","#c62828"]
-   }]
-  },
-  options:{
-   responsive:true,
-   plugins:{legend:{display:false}},
-   scales:{y:{beginAtZero:true}}
+  const r = results.find(x => x[1] === user.roll);
+  if (!r) {
+    alert("Result not found");
+    return;
   }
- });
+
+  const marks = r[2];
+  const vio = Number(r[3]) || 0;
+  const status = r[4];
+
+  let answers = {};
+  if (responses && responses.length > 0 && responses[0][2]) {
+    answers = JSON.parse(responses[0][2]);
+  }
+
+  const totalQ = Object.keys(answers).length;
+  let answered = 0, unanswered = 0;
+
+  Object.values(answers).forEach(a => {
+    if (a === "" || a === null) unanswered++;
+    else answered++;
+  });
+
+  /* ===== UPDATE UI ===== */
+  document.getElementById("totalQ").innerText = totalQ;
+  document.getElementById("answered").innerText = answered;
+  document.getElementById("unanswered").innerText = unanswered;
+  document.getElementById("violations").innerText = vio;
+  document.getElementById("marks").innerText = marks;
+
+  statusBadge.innerText = status;
+  statusBadge.className = "badge " + (status === "PASS" ? "pass" : "fail");
+
+  /* ===== CHART ===== */
+  new Chart(document.getElementById("chart"), {
+    type: "bar",
+    data: {
+      labels: ["Answered", "Unanswered", "Violations"],
+      datasets: [{
+        data: [answered, unanswered, vio],
+        backgroundColor: ["#2e7d32", "#ef6c00", "#c62828"]
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+})
+.catch(err => {
+  console.error("FETCH ERROR:", err);
+  alert("Unable to load result data");
 });
 </script>
 

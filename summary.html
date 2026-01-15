@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Exam Result</title>
+<title>Exam Summary</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet"
@@ -34,14 +34,6 @@ header{
  max-width:720px;
  margin:30px auto;
  padding:20px;
-}
-
-/* ================= FOOTER ================= */
-.footer {
-  text-align: center;
-  margin-top: 18px;
-  font-size: 12px;
-  color: #777;
 }
 
 .card{
@@ -120,6 +112,12 @@ canvas{margin-top:20px}
 .review{background:linear-gradient(135deg,#1976d2,#42a5f5)}
 .dashboard{background:linear-gradient(135deg,#546e7a,#90a4ae)}
 
+.footer{
+ margin-top:18px;
+ font-size:12px;
+ color:#777;
+}
+
 @media(max-width:520px){
  .stats{grid-template-columns:1fr}
 }
@@ -128,7 +126,7 @@ canvas{margin-top:20px}
 
 <body>
 
-<header>📊 Exam Result & Performance</header>
+<header>📊 Exam Summary</header>
 
 <div class="container">
 <div class="card">
@@ -156,7 +154,7 @@ canvas{margin-top:20px}
   </div>
 
   <h3 style="color:#0d47a1">
-    Marks Scored: <span id="marks"></span>
+    Marks Scored: <span id="marks">0</span>
   </h3>
 
   <span id="statusBadge" class="badge"></span>
@@ -165,7 +163,7 @@ canvas{margin-top:20px}
 
   <div class="footer-btns">
     <button class="review" onclick="location.href='review.html'">
-      <i class="fa-solid fa-file-lines"></i> Review Answers
+      <i class="fa-solid fa-file-lines"></i> Review
     </button>
     <button class="dashboard" onclick="location.href='student_dashboard.html'">
       <i class="fa-solid fa-house"></i> Dashboard
@@ -180,27 +178,37 @@ canvas{margin-top:20px}
 </div>
 
 <script>
+/* ================= CONFIG ================= */
 const WEBAPP_URL =
 "https://script.google.com/macros/s/AKfycbyjOeC_ggmXAQZhOVQwyEiVhSFLKhSI9SSJfT76-jwpqNf9R_TXEGToplLyyVYGiuEJ/exec";
 
-/* ===== SAFE DOM ACCESS ===== */
-const studentInfo = document.getElementById("studentInfo");
-const examInfo = document.getElementById("examInfo");
-const statusBadge = document.getElementById("statusBadge");
+/* ================= GET EXAM ID ================= */
+const params = new URLSearchParams(window.location.search);
+const exam_id = params.get("exam_id") || sessionStorage.getItem("exam_id");
 
-/* ===== SESSION CHECK ===== */
-const user = JSON.parse(sessionStorage.getItem("user"));
-const exam_id = sessionStorage.getItem("exam_id");
+/* ================= GET USER ================= */
+const user =
+  JSON.parse(sessionStorage.getItem("user")) ||
+  JSON.parse(localStorage.getItem("user"));
 
-if (!user || !exam_id) {
+/* ================= VALIDATION ================= */
+if (!exam_id) {
+  alert("Invalid access. Exam ID missing.");
+  location.href = "login.html";
+}
+
+if (!user) {
   alert("Session expired. Please login again.");
   location.href = "login.html";
 }
 
-studentInfo.innerHTML = `👨‍🎓 ${user.name} (${user.roll})`;
-examInfo.innerHTML = `📝 Exam ID: ${exam_id}`;
+/* ================= UI ================= */
+document.getElementById("studentInfo").innerHTML =
+  `👨‍🎓 ${user.name} (${user.roll})`;
+document.getElementById("examInfo").innerHTML =
+  `📝 Exam ID: ${exam_id}`;
 
-/* ===== FETCH DATA ===== */
+/* ================= FETCH DATA ================= */
 Promise.all([
   fetch(WEBAPP_URL, {
     method: "POST",
@@ -221,12 +229,9 @@ Promise.all([
 ])
 .then(([results, responses]) => {
 
-  console.log("RESULTS:", results);
-  console.log("RESPONSES:", responses);
-
   const r = results.find(x => x[1] === user.roll);
   if (!r) {
-    alert("Result not found");
+    alert("Result not available yet");
     return;
   }
 
@@ -235,7 +240,7 @@ Promise.all([
   const status = r[4];
 
   let answers = {};
-  if (responses && responses.length > 0 && responses[0][2]) {
+  if (responses?.length && responses[0][2]) {
     answers = JSON.parse(responses[0][2]);
   }
 
@@ -243,41 +248,38 @@ Promise.all([
   let answered = 0, unanswered = 0;
 
   Object.values(answers).forEach(a => {
-    if (a === "" || a === null) unanswered++;
-    else answered++;
+    a === "" || a === null ? unanswered++ : answered++;
   });
 
-  /* ===== UPDATE UI ===== */
   document.getElementById("totalQ").innerText = totalQ;
   document.getElementById("answered").innerText = answered;
   document.getElementById("unanswered").innerText = unanswered;
   document.getElementById("violations").innerText = vio;
   document.getElementById("marks").innerText = marks;
 
-  statusBadge.innerText = status;
-  statusBadge.className = "badge " + (status === "PASS" ? "pass" : "fail");
+  const badge = document.getElementById("statusBadge");
+  badge.innerText = status;
+  badge.className = "badge " + (status === "PASS" ? "pass" : "fail");
 
-  /* ===== CHART ===== */
   new Chart(document.getElementById("chart"), {
     type: "bar",
     data: {
       labels: ["Answered", "Unanswered", "Violations"],
       datasets: [{
         data: [answered, unanswered, vio],
-        backgroundColor: ["#2e7d32", "#ef6c00", "#c62828"]
+        backgroundColor: ["#2e7d32","#ef6c00","#c62828"]
       }]
     },
     options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } }
+      responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true}}
     }
   });
-
 })
-.catch(err => {
-  console.error("FETCH ERROR:", err);
-  alert("Unable to load result data");
+.catch(err=>{
+  console.error(err);
+  alert("Unable to load summary");
 });
 </script>
 

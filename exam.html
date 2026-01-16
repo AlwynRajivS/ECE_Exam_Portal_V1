@@ -968,14 +968,11 @@ function syncCurrentAnswer() {
 }
 
 function autoSubmitFromViolation(){
-  if (isSubmitting) return;
+    if (isSubmitting) return;
   isSubmitting = true;
 
-  // ✅ FORCE last answer capture
-  syncCurrentAnswer();
-
   clearInterval(timerRef);
-  saveState();
+  saveState();   // 💾 ensure latest answers
 
   const finalAnswers = {};
   questions.forEach((q, i) => {
@@ -992,16 +989,27 @@ function autoSubmitFromViolation(){
   formData.append("total_violations", violations);
   formData.append("status", "AUTO_SUBMITTED");
 
-  fetch(WEBAPP_URL, {
-    method: "POST",
-    body: formData
-  }).finally(() => {
+  try {
+    // 🔒 disable unload blocker temporarily
+    window.onbeforeunload = null;
+
+    // ✅ WAIT until Apps Script receives data
+    await fetch(WEBAPP_URL, {
+      method: "POST",
+      body: formData
+    });
+
+    // ⏱ tiny delay for GAS commit safety
     setTimeout(() => {
       location.href = "summary.html";
     }, 300);
-  });
-}
 
+  } catch (err) {
+    console.error("Submit failed", err);
+    alert("Submission failed. Please contact exam admin.");
+    isSubmitting = false;
+  }
+}
 
 
 function saveState(){

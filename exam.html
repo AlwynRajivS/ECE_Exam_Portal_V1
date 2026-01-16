@@ -627,9 +627,12 @@ document.addEventListener("click",forceFullscreen);
 }*/
 
 async function violate(type, auto = false) {
-  if (submitting) return;   // 🔒 use SAME flag as submitExam
+  // 🚨 DO NOT block detection
+  if (isSubmitting) return;
 
   violations++;
+
+  // UI update
   vio.innerText = `${violations} / ${limit}`;
 
   violationLog.push({
@@ -643,7 +646,7 @@ async function violate(type, auto = false) {
   overlay.classList.add("active");
   setTimeout(() => overlay.classList.remove("active"), 2000);
 
-  // backend log
+  // backend violation log (non-blocking)
   try {
     await fetch(WEBAPP_URL, {
       method: "POST",
@@ -660,19 +663,20 @@ async function violate(type, auto = false) {
 
   // 🔥 MAX VIOLATION → FORCE SUBMIT
   if (violations >= limit) {
-    submitting = true;   // 🔥 IMPORTANT
+    isSubmitting = true;   // 🔐 lock immediately
 
     showToast("Maximum violations reached — auto submitting...");
 
-    // ensure answers are saved
+    // ensure latest answers are saved
     saveState();
 
-    // EXACTLY like image code
+    // SAME FLOW AS MANUAL SUBMIT
     setTimeout(() => {
-      submitExam("violations");   // ✅ CALL MAIN SUBMIT
+      submitExam();   // ✅ DO NOT change submitExam()
     }, 800);
   }
 }
+
 
 
 

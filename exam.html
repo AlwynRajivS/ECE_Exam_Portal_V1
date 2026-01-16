@@ -627,7 +627,7 @@ document.addEventListener("click",forceFullscreen);
 }*/
 
 async function violate(type, auto = false) {
-  if (isSubmitting) return;   // ✅ same as image code
+  if (submitting) return;   // 🔒 use SAME flag as submitExam
 
   violations++;
   vio.innerText = `${violations} / ${limit}`;
@@ -643,7 +643,7 @@ async function violate(type, auto = false) {
   overlay.classList.add("active");
   setTimeout(() => overlay.classList.remove("active"), 2000);
 
-  // backend log (extra – image code didn't have this)
+  // backend log
   try {
     await fetch(WEBAPP_URL, {
       method: "POST",
@@ -658,18 +658,18 @@ async function violate(type, auto = false) {
     console.error("Violation log failed", e);
   }
 
-  // 🔥 EXACT IMAGE LOGIC STARTS HERE
+  // 🔥 MAX VIOLATION → FORCE SUBMIT
   if (violations >= limit) {
-    isSubmitting = true;
+    submitting = true;   // 🔥 IMPORTANT
 
     showToast("Maximum violations reached — auto submitting...");
 
-    // ✅ SAVE answers like image submit flow
+    // ensure answers are saved
     saveState();
 
-    // ✅ delay submit (CRITICAL – matches image)
+    // EXACTLY like image code
     setTimeout(() => {
-      autoSubmitFromViolation();
+      submitExam("violations");   // ✅ CALL MAIN SUBMIT
     }, 800);
   }
 }

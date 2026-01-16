@@ -592,7 +592,7 @@ document.addEventListener("click",forceFullscreen);
 }
 }*/
 
-async function violate(type, auto = false) {
+/*async function violate(type, auto = false) {
   violations++;
   vio.innerText = `${violations} / ${limit}`;
 
@@ -624,7 +624,56 @@ async function violate(type, auto = false) {
   if (violations >= limit) {
     autoSubmitFromViolation();
   }
+}*/
+
+async function violate(type, auto = false) {
+  if (isSubmitting) return;   // ✅ same as image code
+
+  violations++;
+  vio.innerText = `${violations} / ${limit}`;
+
+  violationLog.push({
+    type,
+    time: new Date().toLocaleString()
+  });
+
+  proctorMsg.innerText =
+    `Violation: ${type} | Remaining: ${Math.max(0, limit - violations)}`;
+
+  overlay.classList.add("active");
+  setTimeout(() => overlay.classList.remove("active"), 2000);
+
+  // backend log (extra – image code didn't have this)
+  try {
+    await fetch(WEBAPP_URL, {
+      method: "POST",
+      body: new URLSearchParams({
+        action: "violation",
+        exam_id: exam_id,
+        roll_no: user.roll,
+        type: type
+      })
+    });
+  } catch (e) {
+    console.error("Violation log failed", e);
+  }
+
+  // 🔥 EXACT IMAGE LOGIC STARTS HERE
+  if (violations >= limit) {
+    isSubmitting = true;
+
+    showToast("Maximum violations reached — auto submitting...");
+
+    // ✅ SAVE answers like image submit flow
+    saveState();
+
+    // ✅ delay submit (CRITICAL – matches image)
+    setTimeout(() => {
+      autoSubmitFromViolation();
+    }, 800);
+  }
 }
+
 
 
 

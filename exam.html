@@ -919,6 +919,9 @@ function autoSubmitFromViolation(){
   if (isSubmitting) return;
   isSubmitting = true;
 
+  // ✅ FORCE last answer capture
+  syncCurrentAnswer();
+
   clearInterval(timerRef);
   saveState();
 
@@ -940,9 +943,7 @@ function autoSubmitFromViolation(){
   fetch(WEBAPP_URL, {
     method: "POST",
     body: formData
-  })
-  .finally(() => {
-    // ⏱ small delay for safety
+  }).finally(() => {
     setTimeout(() => {
       location.href = "summary.html";
     }, 300);

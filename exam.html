@@ -627,7 +627,7 @@ document.addEventListener("click",forceFullscreen);
 }*/
 
 async function violate(type, auto = false) {
-  // 🚨 DO NOT block detection
+  // 🚨 allow detection always until submit starts
   if (isSubmitting) return;
 
   violations++;
@@ -663,19 +663,18 @@ async function violate(type, auto = false) {
 
   // 🔥 MAX VIOLATION → FORCE SUBMIT
   if (violations >= limit) {
-    isSubmitting = true;   // 🔐 lock immediately
-
     showToast("Maximum violations reached — auto submitting...");
 
     // ensure latest answers are saved
     saveState();
 
-    // SAME FLOW AS MANUAL SUBMIT
+    // ⏳ delay to allow UI + save
     setTimeout(() => {
-      submitExam();   // ✅ DO NOT change submitExam()
+      submitExam();   // ✅ submitExam sets isSubmitting itself
     }, 800);
   }
 }
+
 
 
 

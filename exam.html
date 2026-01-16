@@ -576,7 +576,7 @@ document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
 /* VIOLATIONS */
-function violate(type,auto=false){
+/*function violate(type,auto=false){
  violations++;
  vio.innerText=${violations} / ${limit};
  violationLog.push({type,time:new Date().toLocaleString()});
@@ -590,7 +590,42 @@ function violate(type,auto=false){
  if (violations >= limit) {
   autoSubmitFromViolation();
 }
+}*/
+
+async function violate(type, auto = false) {
+  violations++;
+  vio.innerText = `${violations} / ${limit}`;
+
+  violationLog.push({
+    type,
+    time: new Date().toLocaleString()
+  });
+
+  proctorMsg.innerText =
+    `Violation: ${type} | Remaining: ${limit - violations}`;
+
+  overlay.classList.add("active");
+  setTimeout(() => overlay.classList.remove("active"), 2000);
+
+  try {
+    await fetch(WEBAPP_URL, {
+      method: "POST",
+      body: new URLSearchParams({
+        action: "violation",
+        exam_id: exam_id,
+        roll_no: user.roll,
+        type: type
+      })
+    });
+  } catch (e) {
+    console.error("Violation log failed", e);
+  }
+
+  if (violations >= limit) {
+    autoSubmitFromViolation();
+  }
 }
+
 
 
 /* ================= STRICT PROCTOR EVENTS ================= */

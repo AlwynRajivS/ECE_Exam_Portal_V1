@@ -576,7 +576,7 @@ document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
 /* VIOLATIONS */
-/*function violate(type,auto=false){
+function violate(type,auto=false){
  violations++;
  vio.innerText=${violations} / ${limit};
  violationLog.push({type,time:new Date().toLocaleString()});
@@ -590,7 +590,7 @@ document.addEventListener("click",forceFullscreen);
  if (violations >= limit) {
   autoSubmitFromViolation();
 }
-}*/
+}
 
 /*async function violate(type, auto = false) {
   violations++;
@@ -628,7 +628,7 @@ document.addEventListener("click",forceFullscreen);
 
 
 
-async function violate(type, auto = false) {
+/*async function violate(type, auto = false) {
   if (isSubmitting) return;
 
   violations++;
@@ -672,7 +672,7 @@ async function violate(type, auto = false) {
       submitExam();   // ✅ submitExam already gathers answers correctly
     }, 800);
   }
-}
+}*/
 
 
 

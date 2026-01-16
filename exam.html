@@ -627,7 +627,6 @@ document.addEventListener("click",forceFullscreen);
 }*/
 
 async function violate(type, auto = false) {
-  // 🚨 allow detection always until submit starts
   if (isSubmitting) return;
 
   violations++;
@@ -646,7 +645,7 @@ async function violate(type, auto = false) {
   overlay.classList.add("active");
   setTimeout(() => overlay.classList.remove("active"), 2000);
 
-  // backend violation log (non-blocking)
+  // backend violation log
   try {
     await fetch(WEBAPP_URL, {
       method: "POST",
@@ -665,12 +664,10 @@ async function violate(type, auto = false) {
   if (violations >= limit) {
     showToast("Maximum violations reached — auto submitting...");
 
-    // ensure latest answers are saved
-    saveState();
+    // ❌ DO NOT call saveState() here
 
-    // ⏳ delay to allow UI + save
     setTimeout(() => {
-      submitExam();   // ✅ submitExam sets isSubmitting itself
+      submitExam();   // ✅ submitExam already gathers answers correctly
     }, 800);
   }
 }

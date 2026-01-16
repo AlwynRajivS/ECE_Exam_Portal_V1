@@ -912,7 +912,7 @@ async function submitExam(){
 }
 
 
-function autoSubmitFromViolation(){
+/*function autoSubmitFromViolation(){
   if (isSubmitting) return;
   isSubmitting = true;
 
@@ -944,7 +944,44 @@ function autoSubmitFromViolation(){
       location.href = "summary.html";
     }, 300);
   });
+}*/
+
+async function autoSubmitFromViolation(){
+  if (isSubmitting) return;
+  isSubmitting = true;
+
+  clearInterval(timerRef);
+  saveState();
+
+  const finalAnswers = {};
+  questions.forEach((q, i) => {
+    finalAnswers[String(q[2]).trim()] =
+      answers[i]?.ans || "";
+  });
+
+  const formData = new URLSearchParams();
+  formData.append("action", "submitExam");
+  formData.append("exam_id", exam_id);
+  formData.append("roll_no", user.roll);
+  formData.append("answers_json", JSON.stringify(finalAnswers));
+  formData.append("violation_log", JSON.stringify(violationLog));
+  formData.append("total_violations", violations);
+  formData.append("status", "AUTO_SUBMITTED");
+
+  try {
+    window.onbeforeunload = null;
+
+    await fetch(WEBAPP_URL, {
+      method: "POST",
+      body: formData
+    });
+  } catch(e){
+    console.error("Auto submit failed", e);
+  }
+
+  location.href = "summary.html";
 }
+
 
 /*function syncCurrentAnswer() {
   const q = questions[index];

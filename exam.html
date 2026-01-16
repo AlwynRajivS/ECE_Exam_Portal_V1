@@ -576,25 +576,23 @@ document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
 /* VIOLATIONS */
+
+You said:
 function violate(type,auto=false){
- violations++;
- vio.innerText=`${violations} / ${limit}`;
- violationLog.push({type,time:new Date().toLocaleString()});
- proctorMsg.innerText =
-  `Violation: ${type} | Remaining: ${limit - violations}`;
- overlay.classList.add("active");
- setTimeout(()=>overlay.classList.remove("active"),2000);
- fetch(WEBAPP_URL,{method:"POST",
-  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
- });
- if (violations >= limit) {
+ violations++;
+ vio.innerText=${violations} / ${limit};
+ violationLog.push({type,time:new Date().toLocaleString()});
+ proctorMsg.innerText =
+  Violation: ${type} | Remaining: ${limit - violations};
+ overlay.classList.add("active");
+ setTimeout(()=>overlay.classList.remove("active"),2000);
+ fetch(WEBAPP_URL,{method:"POST",
+  body:new URLSearchParams({action:"violation",exam_id,roll_no:user.roll,type})
+ });
+ if (violations >= limit) {
   autoSubmitFromViolation();
 }
-
-
-
 }
-
 
 
 /* ================= STRICT PROCTOR EVENTS ================= */
@@ -914,13 +912,9 @@ async function submitExam(){
 }
 
 
-
 function autoSubmitFromViolation(){
   if (isSubmitting) return;
   isSubmitting = true;
-
-  // ✅ FORCE last answer capture
-  syncCurrentAnswer();
 
   clearInterval(timerRef);
   saveState();
@@ -943,15 +937,16 @@ function autoSubmitFromViolation(){
   fetch(WEBAPP_URL, {
     method: "POST",
     body: formData
-  }).finally(() => {
+  })
+  .finally(() => {
+    // ⏱ small delay for safety
     setTimeout(() => {
       location.href = "summary.html";
     }, 300);
   });
 }
 
-
-function syncCurrentAnswer() {
+/*function syncCurrentAnswer() {
   const q = questions[index];
   if (!q) return;
 
@@ -966,7 +961,7 @@ function syncCurrentAnswer() {
 
   if (!answers[index]) answers[index] = {};
   answers[index].ans = selected;
-}
+}*/
 
 function saveState(){
   try{

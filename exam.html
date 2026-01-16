@@ -915,7 +915,7 @@ async function submitExam(){
 
 
 
-function autoSubmitFromViolation(){
+/*function autoSubmitFromViolation(){
   if (isSubmitting) return;
   isSubmitting = true;
 
@@ -947,7 +947,61 @@ function autoSubmitFromViolation(){
       location.href = "summary.html";
     }, 300);
   });
+}*/
+
+
+function syncCurrentAnswer() {
+  const q = questions[index];
+  if (!q) return;
+
+  const qid = String(q[2]).trim();
+
+  // 🔹 find selected option / input
+  const selected =
+    document.querySelector('input[name="option"]:checked')?.value ||
+    document.querySelector('.numeric-input')?.value ||
+    document.querySelector('.text-answer')?.value ||
+    "";
+
+  if (!answers[index]) answers[index] = {};
+  answers[index].ans = selected;
 }
+
+function autoSubmitFromViolation(){
+  if (isSubmitting) return;
+  isSubmitting = true;
+
+  // ✅ FORCE last answer capture
+  syncCurrentAnswer();
+
+  clearInterval(timerRef);
+  saveState();
+
+  const finalAnswers = {};
+  questions.forEach((q, i) => {
+    finalAnswers[String(q[2]).trim()] =
+      answers[i]?.ans || "";
+  });
+
+  const formData = new URLSearchParams();
+  formData.append("action", "submitExam");
+  formData.append("exam_id", exam_id);
+  formData.append("roll_no", user.roll);
+  formData.append("answers_json", JSON.stringify(finalAnswers));
+  formData.append("violation_log", JSON.stringify(violationLog));
+  formData.append("total_violations", violations);
+  formData.append("status", "AUTO_SUBMITTED");
+
+  fetch(WEBAPP_URL, {
+    method: "POST",
+    body: formData
+  }).finally(() => {
+    setTimeout(() => {
+      location.href = "summary.html";
+    }, 300);
+  });
+}
+
 
 
 function saveState(){

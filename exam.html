@@ -620,7 +620,6 @@ async function violate(type, auto = false) {
   } catch (e) {
     console.error("Violation log failed", e);
   }
-    saveState();
 
   if (violations >= limit) {
     submitExam();

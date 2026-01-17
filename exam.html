@@ -576,7 +576,7 @@ document.addEventListener("DOMContentLoaded",forceFullscreen);
 document.addEventListener("click",forceFullscreen);
 
 /* VIOLATIONS */
-function violate(type,auto=false){
+/*function violate(type,auto=false){
  violations++;
  vio.innerText=${violations} / ${limit};
  violationLog.push({type,time:new Date().toLocaleString()});
@@ -590,9 +590,9 @@ function violate(type,auto=false){
  if (violations >= limit) {
   autoSubmitFromViolation();
 }
-}
+}*/
 
-/*async function violate(type, auto = false) {
+async function violate(type, auto = false) {
   violations++;
   vio.innerText = `${violations} / ${limit}`;
 
@@ -624,7 +624,7 @@ function violate(type,auto=false){
   if (violations >= limit) {
     submitExam();
   }
-}*/
+}
 
 
 

@@ -550,8 +550,6 @@ let timerStarted = false;
 
  let examLoaded = false;
 let isSubmitting = false;
-let examEnded = false;   // 🔒 HARD LOCK
-let micStream = null;
 
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxmFdZlBq4m_7SvJtVF9NbyGC-c_of2aqokQtyg81aH97WPo6AT56VvwKYGG_tz4XEq/exec";
 
@@ -565,8 +563,6 @@ let violationLog=[],duration=0,limit=0,partA=0,partB=0;
 
 const overlay=document.getElementById("proctorOverlay");
 const proctorMsg=document.getElementById("proctorMsg");
-
-
 
 
 
@@ -596,9 +592,7 @@ document.addEventListener("click",forceFullscreen);
 }
 }*/
 
-async function violate(type){
-  if (examEnded || isSubmitting) return;
-
+async function violate(type, auto = false) {
   violations++;
   vio.innerText = `${violations} / ${limit}`;
 
@@ -608,34 +602,29 @@ async function violate(type){
   });
 
   proctorMsg.innerText =
-    `Violation: ${type} | Remaining: ${Math.max(0, limit - violations)}`;
+    `Violation: ${type} | Remaining: ${limit - violations}`;
 
   overlay.classList.add("active");
   setTimeout(() => overlay.classList.remove("active"), 2000);
-
-  muteMic(); // 🔇 mic mute on every violation
 
   try {
     await fetch(WEBAPP_URL, {
       method: "POST",
       body: new URLSearchParams({
         action: "violation",
-        exam_id,
+        exam_id: exam_id,
         roll_no: user.roll,
-        type
-      }),
-      keepalive: true
+        type: type
+      })
     });
-  } catch(e){
+  } catch (e) {
     console.error("Violation log failed", e);
   }
 
-  if (violations >= limit){
-    submitExam(); // backend decides AUTO-SUBMITTED
+  if (violations >= limit) {
+    submitExam();
   }
 }
-
-
 
 
 
@@ -691,48 +680,33 @@ async function violate(type){
 
 
 /* ================= STRICT PROCTOR EVENTS ================= */
-navigator.mediaDevices.getUserMedia({ audio: true })
-  .then(stream => micStream = stream)
-  .catch(()=>{});
-
-function muteMic(){
-  if (!micStream) return;
-  micStream.getTracks().forEach(t => t.enabled = false);
-}
-
 
 /* ❌ Exit fullscreen */
 document.addEventListener("fullscreenchange",()=>{
-  if(!document.fullscreenElement && !examEnded){
-    violate("Exit Fullscreen");
-  }
+ if(!document.fullscreenElement){
+  violate("Exit Fullscreen");
+ }
 });
-
 
 /* ❌ Notification / call / lock / background */
 document.addEventListener("visibilitychange",()=>{
-  if(document.hidden && !examEnded){
-    violate("App Hidden / Notification / Call / Screen Lock");
-  }
+ if(document.hidden){
+  violate("App Hidden / Notification / Call / Screen Lock");
+ }
 });
-
 
 /* ❌ Control center / quick app switch */
 window.addEventListener("blur",()=>{
-  if(!examEnded){
-    violate("App Switch / Control Center Swipe");
-  }
+ violate("App Switch / Control Center Swipe");
 });
-
 
 /* ❌ Copy / cut / right click */
 ["copy","cut","contextmenu"].forEach(e=>{
-  document.addEventListener(e,ev=>{
-    ev.preventDefault();
-    violate(e.toUpperCase());
-  });
+ document.addEventListener(e,ev=>{
+  ev.preventDefault();
+  violate(e.toUpperCase());
+ });
 });
-
 
 /* ❌ Reload / refresh */
 window.addEventListener("beforeunload", (e)=>{
@@ -744,76 +718,6 @@ window.addEventListener("beforeunload", (e)=>{
     e.returnValue = ""; // block accidental close
   }
 });
-
-
-
-
-
-
-
-/*AI AI TOOL / CHATGPT / COPILOT DETECTION*/
-setInterval(()=>{
-  if(examEnded) return;
-
-  const aiWords = ["chatgpt","copilot","bard","openai","gemini"];
-  const text = document.body.innerText.toLowerCase();
-
-  if(aiWords.some(w=>text.includes(w))){
-    violate("AI Tool Detected");
-  }
-},2000);
-
-/*AI PASTE DETECTION*/
-document.addEventListener("paste",e=>{
-  const text = (e.clipboardData||window.clipboardData)
-    .getData("text")
-    .toLowerCase();
-
-  if(text.length > 200 || text.includes("chatgpt")){
-    e.preventDefault();
-    violate("AI Generated Paste");
-  }
-});
-
-/*NOTIFICATION PERMISSION ENABLED*/
-if("permissions" in navigator){
-  navigator.permissions.query({name:"notifications"})
-    .then(p=>{
-      p.onchange = ()=>{
-        if(p.state==="granted"){
-          violate("Notification Permission Enabled");
-        }
-      };
-    });
-}
-/*SCREENSHOT ATTEMPT*/
-document.addEventListener("keydown",e=>{
-  if(e.key==="PrintScreen"){
-    violate("Screenshot Attempt");
-  }
-});
-/*DEVTOOLS OPEN DETECTION*/
-setInterval(()=>{
-  if(examEnded) return;
-
-  const t = 160;
-  if(
-    window.outerWidth - window.innerWidth > t ||
-    window.outerHeight - window.innerHeight > t
-  ){
-    violate("Developer Tools Opened");
-  }
-},1500);
-
-/*SCREEN RECORD / SHARE BLOCK*/
-navigator.mediaDevices.getDisplayMedia = new Proxy(
-  navigator.mediaDevices.getDisplayMedia,{
-    apply(){
-      violate("Screen Recording Attempt");
-      throw new Error("Screen capture blocked");
-    }
-  }
-);
 
 
 
@@ -1058,51 +962,42 @@ function closeModal(){modal.style.display="none"}
 }*/
 
 
-async function submitExam(){
-  if (isSubmitting || examEnded) return;
-
+function submitExam(){
+  if (isSubmitting) return;
   isSubmitting = true;
-  examEnded = true;
 
   clearInterval(timerRef);
-  saveState();
+  saveState();   // 💾 ensure latest answers
 
   const finalAnswers = {};
-  questions.forEach((q,i)=>{
-    finalAnswers[String(q[2]).trim()] = answers[i]?.ans || "";
+  questions.forEach((q, i) => {
+    finalAnswers[String(q[2]).trim()] =
+      answers[i]?.ans || "";
   });
 
-  const formData = new URLSearchParams({
-    action: "submitExam",
-    exam_id,
-    roll_no: user.roll,
-    answers_json: JSON.stringify(finalAnswers),
-    violation_log: JSON.stringify(violationLog),
-    total_violations: violations,
-    status: "SUBMITTED" // backend overrides if needed
+  const formData = new URLSearchParams();
+  formData.append("action", "submitExam");
+  formData.append("exam_id", exam_id);
+  formData.append("roll_no", user.roll);
+  formData.append("answers_json", JSON.stringify(finalAnswers));
+  formData.append("violation_log", JSON.stringify(violationLog));
+  formData.append("total_violations", violations);
+  formData.append("status", "SUBMITTED");
+
+  fetch(WEBAPP_URL, {
+    method: "POST",
+    body: formData
+  })
+  .then(() => {
+    // ✅ redirect ONLY after backend receives data
+    location.href = "summary.html";
+  })
+  .catch(err => {
+    console.error("Submit failed", err);
+    alert("Submission failed. Please contact exam admin.");
+    isSubmitting = false; // allow retry
   });
-
-  try{
-    await fetch(WEBAPP_URL,{
-      method:"POST",
-      body:formData,
-      keepalive:true
-    });
-
-    setTimeout(()=>{
-      location.replace("summary.html");
-    },800);
-
-  }catch(err){
-    console.error("Submit failed",err);
-    alert("Submission failed. Contact admin.");
-    isSubmitting=false;
-    examEnded=false;
-  }
 }
-
-
-
 
 /*async function submitExam(){
   if (isSubmitting) return;
